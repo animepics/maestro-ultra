@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="392" viewBox="0 0 880 392" font-family="Helvetica, Arial, sans-serif">
+  <rect width="880" height="392" fill="#ffffff"/>
+  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">Real token cost per work unit</text>
+  <text x="32" y="62" font-size="12.5" fill="#52514e">Uncached input and output tokens per Codex session — measured across five maestro QA work units (July 2026)</text>
+
+  <!-- ============ Left panel: uncached input ============ -->
+  <text x="150" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">Uncached input tokens</text>
+
+  <!-- gridlines: 0 / 20k / 40k / 60k over 220px (scale 60k=220) -->
+  <g stroke="#e8e7e4" stroke-width="1">
+    <line x1="150" y1="112" x2="150" y2="322"/>
+    <line x1="223.3" y1="112" x2="223.3" y2="322"/>
+    <line x1="296.7" y1="112" x2="296.7" y2="322"/>
+    <line x1="370" y1="112" x2="370" y2="322"/>
+  </g>
+  <g font-size="10.5" fill="#52514e" text-anchor="middle">
+    <text x="150" y="338">0</text>
+    <text x="223.3" y="338">20k</text>
+    <text x="296.7" y="338">40k</text>
+    <text x="370" y="338">60k</text>
+  </g>
+
+  <!-- row labels -->
+  <g font-size="12" fill="#0b0b0b" text-anchor="end">
+    <text x="138" y="136">slugify</text>
+    <text x="138" y="178">clamp</text>
+    <text x="138" y="220">truncate</text>
+    <text x="138" y="262">parse-duration</text>
+    <text x="138" y="304">stats (steered)</text>
+  </g>
+
+  <!-- bars: value/60000*220 ; rounded data-end only -->
+  <g fill="#2a78d6">
+    <path d="M150 123 h148.2 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-148.2 z"/>
+    <path d="M150 165 h147.6 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-147.6 z"/>
+    <path d="M150 207 h201.4 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-201.4 z"/>
+    <path d="M150 249 h140.8 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-140.8 z"/>
+    <path d="M150 291 h121.0 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-121.0 z"/>
+  </g>
+  <g font-size="11" fill="#52514e">
+    <text x="308" y="136">41.5k</text>
+    <text x="307" y="178">41.4k</text>
+    <text x="361" y="220">56.0k</text>
+    <text x="300" y="262">39.5k</text>
+    <text x="281" y="304">34.1k</text>
+  </g>
+
+  <!-- ============ Right panel: output ============ -->
+  <text x="480" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">Output tokens</text>
+
+  <!-- gridlines: 0 / 2k / 4k / 6k / 8k over 220px (scale 8k=220) -->
+  <g stroke="#e8e7e4" stroke-width="1">
+    <line x1="480" y1="112" x2="480" y2="322"/>
+    <line x1="535" y1="112" x2="535" y2="322"/>
+    <line x1="590" y1="112" x2="590" y2="322"/>
+    <line x1="645" y1="112" x2="645" y2="322"/>
+    <line x1="700" y1="112" x2="700" y2="322"/>
+  </g>
+  <g font-size="10.5" fill="#52514e" text-anchor="middle">
+    <text x="480" y="338">0</text>
+    <text x="535" y="338">2k</text>
+    <text x="590" y="338">4k</text>
+    <text x="645" y="338">6k</text>
+    <text x="700" y="338">8k</text>
+  </g>
+
+  <!-- bars: value/8000*220 -->
+  <g fill="#008300">
+    <path d="M480 123 h108.7 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-108.7 z"/>
+    <path d="M480 165 h89.5 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-89.5 z"/>
+    <path d="M480 207 h184.6 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-184.6 z"/>
+    <path d="M480 249 h70.3 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-70.3 z"/>
+    <path d="M480 291 h114.3 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-114.3 z"/>
+  </g>
+  <g font-size="11" fill="#52514e">
+    <text x="598" y="136">4.1k</text>
+    <text x="579" y="178">3.4k</text>
+    <text x="674" y="220">6.9k</text>
+    <text x="560" y="262">2.7k</text>
+    <text x="604" y="304">4.3k</text>
+  </g>
+
+  <text x="32" y="374" font-size="11" fill="#52514e">Totals shown to the provider are far higher (0.34M–0.82M) but 90–93% is cached input; bars show what a run actually costs. Source: ~/.codex/sessions rollout usage records.</text>
+</svg>

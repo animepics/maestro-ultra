@@ -1,0 +1,14 @@
+# Normalize line endings
+* text=auto eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.svg text eol=lf
+
+# Vendored transport: keep language stats and diffs honest
+scripts/** linguist-vendored
+scripts/package-lock.json -diff
+
+# Generated-ish assets collapse in PR diffs by default
+docs/assets/*.svg -diff

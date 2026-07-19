@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in maestro misbehaved — a dispatch, verification, worktree, or transport problem
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Most maestro bugs live in one of four places: preflight, dispatch/observe (transport), verification mechanics (baseline/worktree/merge), or the skill's instructions. The fields below help us find which.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did maestro do, and what did you expect instead?
+      placeholder: e.g. parallel units merged in the wrong order / preflight passed but the session stalled
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The /maestro invocation, target repo shape, and steps
+      placeholder: |
+        1. /maestro "…"
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Output of the commands below
+      placeholder: |
+        codex --version:
+        codex login status:
+        node --version:
+        node <maestro>/scripts/codex-query.ts status  (first lines):
+        OS:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Relevant output — thread `read` transcript, git state (`git worktree list`, `git branch`), `.maestro/state.json` if present
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight sanity
+      options:
+        - label: "`codex app-server` is running and `codex login status` exits 0"
+        - label: "the target directory is a git repository"
+        - label: "`npm install` was run in `scripts/` (or via install.sh)"

@@ -1,0 +1,39 @@
+name: Feature request
+description: Propose an improvement to the harness, the skill, or the transport
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can't you do today, or what goes wrong without this?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should maestro do? If it touches the dispatch/verify loop, say which phase.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Skill (SKILL.md workflow)
+        - Transport (scripts/codex-query.ts)
+        - Install / preflight
+        - Docs / AGENTS.md
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do it manually today by …"
+  - type: markdown
+    attributes:
+      value: |
+        Note: maestro deliberately keeps the transport diff vs upstream minimal (`scripts/ATTRIBUTION.md`) and prefers instructions over code (see the "judgment vs mechanics" split in the skill). Proposals that respect those constraints land faster.
