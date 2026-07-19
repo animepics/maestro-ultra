@@ -27,15 +27,52 @@ Claude Maestro — an orchestration harness where Claude acts as the conductor: 
 ## Prerequisites
 
 - **[Codex CLI](https://github.com/openai/codex)** with app-server support, running as `codex app-server`
-- **`use-codex-appserver` skill** installed at `~/.claude/skills/use-codex-appserver` (or `~/.agents/skills/`) with `npm install` done inside its `scripts/` — its `codex-query.ts` CLI is maestro's only transport
-- **Node with TypeScript type-stripping** (≥ 23.6 guaranteed; 22.18+ typically works) or Bun, for the transport CLI
+- **Node with TypeScript type-stripping** (≥ 23.6 guaranteed; 22.18+ typically works) or Bun
 - Target projects must be **git repositories** (verification is diff-based)
 - **v1 scope:** local same-machine only (no remote `HOST=` targets); sessions use the app-server's default sandbox/model config
 
+The transport CLI (`scripts/codex-query.ts`, WebSocket JSON-RPC — vendored from the use-codex-appserver skill) ships in this repo: **no external skill dependency**.
+
 ## Installation
 
-The skill source lives in this repo (`skills/maestro/`). Install globally via symlink:
-
 ```sh
-ln -s "$(pwd)/skills/maestro" ~/.claude/skills/maestro
+git clone https://github.com/animepics/maestro.git && cd maestro
+./install.sh
 ```
+
+The installer symlinks `skills/maestro` into `~/.claude/skills/` and installs the transport's npm dependencies. Then, in Claude Code: `/maestro "your task"`.
+
+## Example run (real transcript, condensed)
+
+Single unit — `/maestro "create hello.txt containing 'hello maestro'"`:
+
+```text
+Phase 1  1 unit, single session (no split value) — criteria: file exists, exact bytes, nothing else touched
+Phase 2  baseline 718ce99 recorded → create session → msg --approve (background)
+Phase 3  observing… turn completed
+Phase 4  answer claims success → evidence: git diff shows only hello.txt;
+         od -c: 'h e l l o   m a e s t r o \n'  → 3/3 criteria PASS
+```
+
+Parallel — two units in isolated worktrees:
+
+```text
+Phase 2  worktree add -b maestro/unit-a …-maestro-unit-a 718ce99   (same for unit-b)
+         two sessions dispatched concurrently
+Phase 4  unit-b finishes first → verified while unit-a still runs
+         per-unit diffs attribute cleanly (b/beta.txt ← unit-b only)
+Cleanup  merge maestro/unit-a, maestro/unit-b (dispatch order) → worktrees & branches removed, no leaks
+```
+
+The `answer`-is-a-claim rule earns its keep: in testing, a stale app-server produced turns that reported "completed" with zero work done — diff-based verification caught it immediately (now documented in the skill's Troubleshooting).
+
+## For Codex sessions
+
+[`AGENTS.md`](AGENTS.md) documents the contract from the Codex side: criteria are the spec, diffs are the evidence, commit-on-branch for parallel units, ask instead of guessing.
+
+## Roadmap
+
+- **Remote `HOST=` targets** — the transport already speaks to remote app-servers; verification needs a remote-diff story (likely `git bundle` or SSH-side `git -C` execution)
+- **Per-task sandbox/model selection** — requires wrapping the raw `config/value/write` RPC that the CLI does not yet expose
+- **Minimal orchestration helper** — extract deterministic baseline/worktree/background-msg mechanics into ~100 lines of code *only if* the verbatim prose templates prove insufficient in practice
+- **Rework-rate metrics** — track criteria-pass-on-first-attempt vs rework rounds across runs

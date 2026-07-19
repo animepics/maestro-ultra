@@ -1,0 +1,21 @@
+{
+  "name": "codex-query",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "check": "biome check . && tsc --noEmit && node --test lib/*.test.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/node": "*",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.9.0"
+  }
+}
