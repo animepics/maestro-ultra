@@ -30,6 +30,11 @@ SCRIPT=<this-skill-dir>/../../scripts/codex-query.ts        # vendored in the ma
 # 3. Runtimes:
 command -v codex                            # missing → instruct: install Codex CLI
 
+# 3.5 Codex auth — exit 1 ("Not logged in") → STOP and tell the user exactly this:
+codex login status                          #   "Run `codex login` first. Codex requires a ChatGPT account
+                                            #    with an eligible plan (Plus/Pro/Team/Enterprise) — if you
+                                            #    don't have one, subscribe before using maestro."
+
 # 4. App-server reachable — this is the authoritative runtime check:
 node $SCRIPT status                         # syntax/type error → Node too old for TS type stripping: upgrade (≥23.6 guaranteed; 22.18+ typically works)
                                             # connection error → instruct: start codex app-server
@@ -101,7 +106,7 @@ node $SCRIPT msg <threadId> "<prompt>" --approve --timeout <fit-to-task-size>   
 
 While background `msg` runs: poll `node $SCRIPT active` and `node $SCRIPT read <threadId>`; summarize progress for the user. `steer <threadId> "<corrective delta>"` when a session drifts from its criteria *(judgment)*; `interrupt <threadId>` for runaway turns. On msg timeout the turn continues server-side: keep polling `read` — never re-`msg` blindly.
 
-*(Note: steer/read open separate connections while the background msg holds one; multiple clients are supported, but same-thread steer-during-background-msg is unverified — if steer errors, fall back to interrupt + a rework msg.)*
+*(Steer-during-background-msg is verified working: steer opens its own connection while the background msg holds one, injects into the running turn, and the delta is incorporated. If steer ever errors, fall back to interrupt + a rework msg.)*
 
 ## Phase 4 — Verify *(mechanics templates + judgment review)* — per unit, as each completes
 

@@ -26,7 +26,7 @@ Claude Maestro — an orchestration harness where Claude acts as the conductor: 
 
 ## Prerequisites
 
-- **[Codex CLI](https://github.com/openai/codex)** with app-server support, running as `codex app-server`
+- **[Codex CLI](https://github.com/openai/codex)** with app-server support, running as `codex app-server`, and **signed in** (`codex login` — requires a ChatGPT account with an eligible plan: Plus/Pro/Team/Enterprise). Preflight checks this and tells you exactly what's missing.
 - **Node with TypeScript type-stripping** (≥ 23.6 guaranteed; 22.18+ typically works) or Bun
 - Target projects must be **git repositories** (verification is diff-based)
 - **v1 scope:** local same-machine only (no remote `HOST=` targets); sessions use the app-server's default sandbox/model config

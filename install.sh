@@ -46,6 +46,13 @@ else
 fi
 
 echo "==> Done. Next steps:"
-echo "    1. Make sure the Codex CLI is installed and 'codex app-server' is running"
-echo "    2. Open Claude Code and run: /maestro \"your task\""
+echo "    1. Install the Codex CLI and sign in: codex login"
+echo "       (requires a ChatGPT account with an eligible plan — Plus/Pro/Team/Enterprise)"
+echo "    2. Start the app-server: codex app-server"
+echo "    3. Open Claude Code and run: /maestro \"your task\""
 echo "    (Preflight inside the skill validates the full setup before any dispatch.)"
+if command -v codex >/dev/null 2>&1; then
+  codex login status >/dev/null 2>&1 || echo "NOTE: codex is installed but you are NOT logged in — run: codex login"
+else
+  echo "NOTE: codex CLI not found on PATH — install it before using maestro"
+fi
