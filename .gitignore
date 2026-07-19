@@ -13,3 +13,6 @@ node_modules/
 
 # maestro runtime state (in target repos; never committed here either)
 .maestro/
+
+# Tooling artifacts
+.playwright-mcp/
