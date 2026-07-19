@@ -146,3 +146,40 @@ describe("parseCliArgs read and answer", () => {
     assert.deepEqual(result.value, { kind: "answer", threadId: "tid-5" });
   });
 });
+
+describe("parseCliArgs msg model/effort overrides", () => {
+  it("parses --model and --effort so maestro can pick the model per work unit", () => {
+    // Given / When
+    const result = parseCliArgs([
+      "msg",
+      "tid-6",
+      "do it",
+      "--model",
+      "gpt-5.6-luna",
+      "--effort",
+      "low",
+    ]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, {
+      kind: "msg",
+      threadId: "tid-6",
+      text: "do it",
+      timeoutSecs: 600,
+      approve: false,
+      model: "gpt-5.6-luna",
+      effort: "low",
+    });
+  });
+
+  it("leaves model and effort undefined when the flags are absent", () => {
+    // Given / When
+    const result = parseCliArgs(["msg", "tid-7", "do it"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.equal(result.value.kind, "msg");
+    if (result.value.kind !== "msg") throw new Error("unreachable");
+    assert.equal(result.value.model, undefined);
+    assert.equal(result.value.effort, undefined);
+  });
+});

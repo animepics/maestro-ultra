@@ -122,7 +122,12 @@ export async function runMsg(client: CodexClient, command: MsgCommand): Promise<
 
     const startRaw = await client.request(
       "turn/start",
-      { threadId: command.threadId, input: [{ type: "text", text: command.text }] },
+      {
+        threadId: command.threadId,
+        input: [{ type: "text", text: command.text }],
+        ...(command.model !== undefined && { model: command.model }),
+        ...(command.effort !== undefined && { effort: command.effort }),
+      },
       timeoutMs,
     );
     const { turn } = TurnStartResponseSchema.parse(startRaw);

@@ -6,3 +6,10 @@ The transport CLI in this directory (`codex-query.ts` and `lib/`) is vendored fr
 
 Vendored 2026-07-19 so that maestro is self-contained. Upstream fixes should be ported
 here; maestro-local changes should stay minimal to keep the diff against upstream small.
+
+## Maestro-local changes vs upstream
+
+- `msg` accepts `--model <id>` and `--effort <level>`, passed through as `turn/start`'s
+  `model`/`effort` overrides (protocol v2 `TurnStartParams`) so the conductor can pick
+  the model per work unit. (`lib/cli-args.ts`, `lib/turn-commands.ts`, tests in
+  `lib/cli-args.test.ts`.)

@@ -12,7 +12,7 @@ Claude is the conductor (planning, judgment, verification); Codex is the perform
 ## Scope (v1)
 
 - **Local same-machine only.** Diff/build/test verification requires Codex's cwd on the same host as Claude. Remote `HOST=` app-servers are out of scope.
-- **Server-default sandbox/model.** The transport's `create <cwd>` exposes no sandbox/model flags; sessions use the app-server's default config.
+- **Server-default sandbox.** Sandbox policy uses the app-server's default config. (Model and reasoning effort ARE selectable per unit — see Phase 1.)
 - **Target cwd must be a git repository** — verification is diff-based.
 
 ## Prerequisites & Preflight *(mechanics — run ALL before any dispatch; on any failure STOP and report the fix, do not dispatch)*
@@ -58,7 +58,13 @@ If `<target-repo>/.maestro/state.json` exists, a previous maestro run was interr
    - units touch **disjoint directories** (not merely disjoint files — a shared git index, lockfiles, and build artifacts break attribution), AND
    - each unit is individually meaningful.
    Otherwise run single-session.
-3. **Report the decision and reasoning to the user before dispatching.**
+3. **Model & effort per unit** *(judgment)*: pick the GPT model and reasoning effort to match each unit's difficulty — pass them via `msg --model <id> --effort <low|medium|high>`. Guidance:
+   - **Mechanical/small** (rename, boilerplate, single small function): default model, `--effort low`
+   - **Standard implementation** (feature + tests): default model, `--effort medium` (or omit both)
+   - **Hard** (debugging, tricky algorithms, cross-cutting refactors): default or strongest available model, `--effort high`
+   Omitted flags fall back to the app-server's configured default. State your model/effort choice per unit in the dispatch report.
+4. **Anti-overengineering is part of every dispatch** *(judgment)*: every prompt's Do section MUST include a minimalism decision rule (e.g., "implement the smallest standard-library solution that satisfies the criteria; no new dependencies, no speculative abstractions, no features beyond the criteria"), and Phase 4 review MUST check the diff for overengineering (unrequested features, needless layers/config, premature generalization) — overengineered-but-working output is a verification FAIL with a rework instruction to simplify.
+5. **Report the decision and reasoning to the user before dispatching.**
 
 ## Phase 2 — Dispatch *(mechanics + judgment)*
 
@@ -121,7 +127,9 @@ Review the diff against **each** acceptance criterion *(judgment)*. Produce a pe
 
 ## Phase 5 — Rework loop *(judgment)*
 
-On failure: `msg` the SAME thread (same `--approve`/background mechanics) with the concrete defect list and unmet criteria — **≤3 rounds total**. After round 3: escalate to the user with per-criterion status, diff summary, and a recommended next action.
+**Root-cause before consuming a round:** if a failing criterion reproduces independently of the session's changes — e.g., a harness-supplied test command that cannot pass in this environment, a broken fixture, or a criterion contradicting the repo — it is a **conductor/environment defect, not a Codex defect**: fix it conductor-side (or amend the criterion), re-verify, and do NOT consume a rework round. Sessions that correctly flag such blockers in their answer instead of hacking around them are behaving well.
+
+On genuine work defects: `msg` the SAME thread (same `--approve`/background mechanics) with the concrete defect list and unmet criteria — **≤3 rounds total**. After round 3: escalate to the user with per-criterion status, diff summary, and a recommended next action.
 
 ## Cleanup *(mechanics — parallel runs only)* — per accepted unit, after verification
 

@@ -29,6 +29,8 @@ export type Command =
       readonly text: string;
       readonly timeoutSecs: number;
       readonly approve: boolean;
+      readonly model?: string;
+      readonly effort?: string;
     }
   | { readonly kind: "steer"; readonly threadId: string; readonly text: string }
   | { readonly kind: "interrupt"; readonly threadId: string }
@@ -44,6 +46,8 @@ const VALUE_FLAGS: ReadonlySet<string> = new Set([
   "cwd",
   "limit",
   "timeout",
+  "model",
+  "effort",
 ]);
 const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(["archived", "approve", "full"]);
 
@@ -216,8 +220,19 @@ export function parseCliArgs(argv: readonly string[]): Result<Command, CliArgsEr
       }
       return parseWithText(
         flags,
-        (threadId, text) =>
-          ok({ kind: "msg", threadId, text, timeoutSecs, approve: flags.booleans.has("approve") }),
+        (threadId, text) => {
+          const model = flags.values.get("model");
+          const effort = flags.values.get("effort");
+          return ok({
+            kind: "msg",
+            threadId,
+            text,
+            timeoutSecs,
+            approve: flags.booleans.has("approve"),
+            ...(model !== undefined && { model }),
+            ...(effort !== undefined && { effort }),
+          });
+        },
         "msg",
       );
     }
