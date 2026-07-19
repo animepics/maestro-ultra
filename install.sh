@@ -1,9 +1,26 @@
 #!/bin/sh
-# maestro installer: global skill symlink + transport deps
+# maestro installer — works both ways:
+#   curl -fsSL https://raw.githubusercontent.com/animepics/maestro/main/install.sh | sh
+#   ./install.sh   (from a local checkout)
 set -e
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_URL="https://github.com/animepics/maestro.git"
 SKILL_LINK="$HOME/.claude/skills/maestro"
+
+# Local checkout if the script sits next to skills/maestro; otherwise clone/update.
+SELF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)"
+if [ -n "$SELF_DIR" ] && [ -f "$SELF_DIR/skills/maestro/SKILL.md" ]; then
+  REPO_DIR="$SELF_DIR"
+else
+  REPO_DIR="${MAESTRO_DIR:-$HOME/.maestro}"
+  if [ -d "$REPO_DIR/.git" ]; then
+    echo "==> Updating existing clone at $REPO_DIR"
+    git -C "$REPO_DIR" pull --ff-only
+  else
+    echo "==> Cloning maestro to $REPO_DIR"
+    git clone "$REPO_URL" "$REPO_DIR"
+  fi
+fi
 
 echo "==> Installing transport dependencies (scripts/)"
 if command -v npm >/dev/null 2>&1; then

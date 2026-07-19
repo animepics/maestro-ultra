@@ -78,7 +78,7 @@ node $SCRIPT create <worktree-path>
 
 Two parallel sessions MUST NOT share a cwd. Single unit: `node $SCRIPT create <cwd>` directly — no worktree, no branch.
 
-**Prompt composition** *(judgment)*: READ `use-codex-appserver/references/prompting-codex.md` and follow its required shape — Goal / Do / Don't / Expected result / Test — **in English**, with the unit's acceptance criteria embedded verbatim. For parallel units, the Expected result MUST include: *"commit all your work on the current branch (`maestro/<unit-slug>`)"* — merge and cleanup operate on the branch tip.
+**Prompt composition** *(judgment)*: READ `references/prompting-codex.md` (in this skill's directory) and follow its required shape — Goal / Do / Don't / Expected result / Test — **in English**, with the unit's acceptance criteria embedded verbatim. For parallel units, the Expected result MUST include: *"commit all your work on the current branch (`maestro/<unit-slug>`)"* — merge and cleanup operate on the branch tip.
 
 **Send — non-blocking** *(mechanics)*:
 
