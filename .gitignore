@@ -1,0 +1,9 @@
+# OMC runtime state (committable exception: .omc/skills/)
+.omc/*
+!.omc/skills/
+
+# OS
+.DS_Store
+
+# Node
+node_modules/
