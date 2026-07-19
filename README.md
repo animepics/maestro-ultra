@@ -38,7 +38,7 @@ The transport CLI (`scripts/codex-query.ts`, WebSocket JSON-RPC — vendored fro
 One command:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/animepics/maestro/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/install.sh | sh
 ```
 
 This clones the repo to `~/.maestro` (override with `MAESTRO_DIR`), installs the transport's npm dependencies, and symlinks `skills/maestro` into `~/.claude/skills/`. From a local checkout, `./install.sh` does the same without cloning. Then, in Claude Code: `/maestro "your task"`.

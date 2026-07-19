@@ -1,10 +1,10 @@
 #!/bin/sh
 # maestro installer — works both ways:
-#   curl -fsSL https://raw.githubusercontent.com/animepics/maestro/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/install.sh | sh
 #   ./install.sh   (from a local checkout)
 set -e
 
-REPO_URL="https://github.com/animepics/maestro.git"
+REPO_URL="https://github.com/animepics/maestro-ultra.git"
 SKILL_LINK="$HOME/.claude/skills/maestro"
 
 # Local checkout if the script sits next to skills/maestro; otherwise clone/update.
