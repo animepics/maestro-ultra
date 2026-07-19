@@ -24,6 +24,14 @@ Claude Maestro — an orchestration harness where Claude acts as the conductor: 
    └─ 6. Pass → done. Fail → rework prompt to the same session (≤3 rounds) → escalate
 ```
 
+## Prerequisites
+
+- **[Codex CLI](https://github.com/openai/codex)** with app-server support, running as `codex app-server`
+- **`use-codex-appserver` skill** installed at `~/.claude/skills/use-codex-appserver` (or `~/.agents/skills/`) with `npm install` done inside its `scripts/` — its `codex-query.ts` CLI is maestro's only transport
+- **Node with TypeScript type-stripping** (≥ 23.6 guaranteed; 22.18+ typically works) or Bun, for the transport CLI
+- Target projects must be **git repositories** (verification is diff-based)
+- **v1 scope:** local same-machine only (no remote `HOST=` targets); sessions use the app-server's default sandbox/model config
+
 ## Installation
 
 The skill source lives in this repo (`skills/maestro/`). Install globally via symlink:
@@ -31,5 +39,3 @@ The skill source lives in this repo (`skills/maestro/`). Install globally via sy
 ```sh
 ln -s "$(pwd)/skills/maestro" ~/.claude/skills/maestro
 ```
-
-Requires the [Codex CLI](https://github.com/openai/codex) with app-server support.
