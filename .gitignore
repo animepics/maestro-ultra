@@ -2,6 +2,9 @@
 .omc/*
 !.omc/skills/
 
+# Local Claude Code settings
+.claude/
+
 # OS
 .DS_Store
 
