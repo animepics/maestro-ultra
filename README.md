@@ -89,6 +89,29 @@ Key mechanics, pinned as verbatim command templates in the skill (so they're ide
 
 <br>
 
+## Transport CLI — `codex-query.ts`
+
+The conductor's dispatch channel is a plain CLI over the same WebSocket JSON-RPC connection the app-server exposes. It runs standalone too: `node scripts/codex-query.ts <command> [args] [flags]` (or against a remote app-server via `HOST=`).
+
+| Command | What it does | Key flags |
+|---|---|---|
+| `status` | remote-control status (raw JSON) | — |
+| `models` | models offered by the app-server, with reasoning-effort support (raw JSON) | — |
+| `create <cwd>` | start a new thread | — |
+| `msg <threadId> <text...>` | send a message, stream the reply | `--approve` `--model` `--effort` `--timeout secs` |
+| `read <threadId>` | thread details with recent turns (last 5 unless `--full`) | `--full` |
+| `active` | threads with a turn currently in flight | — |
+| `steer <threadId> <text...>` | inject input into the running turn | — |
+| `interrupt <threadId>` | stop the running turn | — |
+| `answer <threadId>` | final agent message, full text | — |
+| `workflows` | codex-side workflow table merged with `.maestro/state.json` | `--watch` `--cwd path` |
+| `events <threadId>` | tail a running turn's live events on a second connection | `--follow` |
+
+> [!NOTE]
+> `workflows` is codex-side only — it sees Codex threads, not Claude subagent performers; the combined view across both is the `maestro-workflows` skill (see [Live status](#live-status--maestro-workflows) above). `events` tails by calling `thread/resume` on a second connection, subscribing to the thread's live notification stream — that also lets it tail a turn started elsewhere; a thread whose first turn hasn't persisted a rollout yet can't be resumed, and a one-shot call exits at turn completion unless `--follow` is set.
+
+<br>
+
 ## Benchmark: maestro vs codex alone
 
 Head-to-head, July 2026: the **same task text** given to a bare `codex exec` and to `/maestro`, same model, scored against a **hidden test suite written before either run**. One clear-spec task, one deliberately vague one.
