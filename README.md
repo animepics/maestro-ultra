@@ -22,6 +22,8 @@ Plus eight <a href="https://github.com/rlaope/ultraprompt">ultraprompt</a> skill
 > [!IMPORTANT]
 > The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
 
+<br>
+
 ## Install
 
 ```sh
@@ -42,6 +44,8 @@ have codex implement a slugify utility with full test coverage
 ```
 
 See [Prerequisites](#prerequisites) for what must be running first — the skill's preflight checks it all and tells you exactly what's missing.
+
+<br>
 
 ## Architecture
 
@@ -76,6 +80,8 @@ Key mechanics, pinned as verbatim command templates in the skill (so they're ide
 - **Non-blocking dispatch** — `msg` runs in the background so Claude can observe, steer a drifting session mid-turn, or interrupt a runaway one.
 - **Crash-safe** — thread ids, baselines, and worktrees persist to `.maestro/state.json`; an interrupted run reattaches instead of orphaning sessions.
 
+<br>
+
 ## Benchmark: maestro vs codex alone
 
 Head-to-head, July 2026: the **same task text** given to a bare `codex exec` and to `/maestro`, same model, scored against a **hidden test suite written before either run**. One clear-spec task, one deliberately vague one.
@@ -100,6 +106,8 @@ What the QA runs also exercised, end to end:
 | Mid-turn steering | A constraint added via `steer` while the turn ran was fully incorporated in the final code |
 | Honest-performer behavior | When the environment (not the code) broke a test command, the session reported the blocker precisely rather than hacking around it — and diff-based verification caught it independently |
 
+<br>
+
 ## Why maestro (comparison)
 
 | | `/maestro` | raw `codex exec` | manual session juggling |
@@ -114,6 +122,8 @@ What the QA runs also exercised, end to end:
 | Reasoning quality on smaller models | strategy skills injected per unit (`## Read first`) | — | — |
 | Overengineering control | minimalism rule in every prompt + checked at review | — | — |
 
+<br>
+
 ## Prerequisites
 
 - [Codex CLI](https://github.com/openai/codex) with app-server support, running as `codex app-server`, and **signed in** (`codex login` — requires a ChatGPT account with an eligible plan: Plus/Pro/Team/Enterprise)
@@ -123,6 +133,8 @@ What the QA runs also exercised, end to end:
 
 > [!WARNING]
 > Not signed in to Codex (or no eligible ChatGPT plan)? Nothing will dispatch. The skill's preflight checks all of this before any dispatch and tells you exactly what's missing — including when you're not logged in.
+
+<br>
 
 ## Example run (real transcript, condensed)
 
@@ -141,6 +153,8 @@ Phase 2  worktree add -b maestro/unit-a …  (same for unit-b) → two sessions 
 Phase 4  unit-b finishes first → verified while unit-a still runs; per-unit diffs attribute cleanly
 Cleanup  merge in dispatch order → worktrees & branches removed, no leaks
 ```
+
+<br>
 
 ## Strategy skills — reasoning like the stronger model
 
@@ -170,13 +184,19 @@ maestro wires both halves together per work unit, automatically:
 > [!NOTE]
 > **Measured honestly** (n=3 per arm, hidden-suite blind scoring, weakest roster model): when the task is *within* the dispatched model's comfort zone, injection changes nothing — both arms scored 100% and the injected arm just paid ~+25s / ~+9k tokens reading skills it didn't need. That's exactly why the skill skips injection for trivial units, and why the mapping targets it at genuinely hard ones. Its effect on tasks that exceed the model's ability is still an open measurement.
 
+<br>
+
 ## For Codex sessions
 
 [`AGENTS.md`](AGENTS.md) documents the contract from the performer's side: criteria are the spec, diffs are the evidence, commit-on-branch for parallel units, ask one concrete question instead of guessing. The [strategy skills](#strategy-skills--reasoning-like-the-stronger-model) above are written to be readable by Codex sessions too — `verification-discipline` and `failure-mode-enumeration` are the two that pay off first.
 
+<br>
+
 ## Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). Short version: `cd scripts && npm run check` must stay green (biome + tsc + tests), the vendored transport keeps a minimal diff vs upstream (`scripts/ATTRIBUTION.md`), and skill changes need a real dispatched-session check.
+
+<br>
 
 ## Roadmap
 
@@ -185,9 +205,13 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). Short version: `cd scripts && npm run 
 - **Minimal orchestration helper** — extract deterministic mechanics into code *only if* the verbatim prose templates prove insufficient in practice
 - **Rework-rate metrics** — criteria-pass-on-first-attempt tracking across runs
 
+<br>
+
 ## Maintainers
 
 - [@rlaope](https://github.com/rlaope)
+
+<br>
 
 ## License
 
