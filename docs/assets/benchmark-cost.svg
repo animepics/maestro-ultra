@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="430" viewBox="0 0 880 430" font-family="Helvetica, Arial, sans-serif">
+  <rect width="880" height="430" fill="#ffffff"/>
+  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">Same task, same model — with and without the conductor</text>
+  <text x="32" y="62" font-size="12.5" fill="#52514e">Head-to-head: bare `codex exec` vs /maestro, identical task text and model (gpt-5.6), July 2026</text>
+
+  <!-- legend -->
+  <g font-size="11.5" fill="#0b0b0b">
+    <rect x="640" y="30" width="12" height="12" rx="3" fill="#008300"/>
+    <text x="658" y="40">codex alone</text>
+    <rect x="640" y="50" width="12" height="12" rx="3" fill="#2a78d6"/>
+    <text x="658" y="60">maestro</text>
+  </g>
+
+  <!-- ===== Left panel: time ===== -->
+  <text x="90" y="100" font-size="12.5" font-weight="600" fill="#0b0b0b">Time to finished code (minutes)</text>
+  <g stroke="#e8e7e4" stroke-width="1">
+    <line x1="90" y1="255" x2="400" y2="255"/>
+    <line x1="90" y1="200" x2="400" y2="200"/>
+    <line x1="90" y1="145" x2="400" y2="145"/>
+  </g>
+  <line x1="90" y1="310" x2="400" y2="310" stroke="#d6d5d1"/>
+  <g font-size="10.5" fill="#52514e" text-anchor="end">
+    <text x="82" y="314">0</text>
+    <text x="82" y="259">2</text>
+    <text x="82" y="204">4</text>
+    <text x="82" y="149">6</text>
+  </g>
+  <!-- scale: 27.5px per minute; groups: clear-spec | vague-spec -->
+  <g fill="#008300">
+    <path d="M110 310 v-37.2 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v37.2 z"/>
+    <path d="M250 310 v-194 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v194 z"/>
+  </g>
+  <g fill="#2a78d6">
+    <path d="M168 310 v-56.5 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v56.5 z"/>
+    <path d="M308 310 v-31.8 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v31.8 z"/>
+  </g>
+  <g font-size="11" fill="#52514e" text-anchor="middle">
+    <text x="136" y="258">1.5</text>
+    <text x="194" y="239">2.2</text>
+    <text x="276" y="132" fill="#ffffff" font-weight="600">7.2</text>
+    <text x="334" y="264">1.3</text>
+  </g>
+  <g font-size="12" fill="#0b0b0b" text-anchor="middle">
+    <text x="165" y="332">clear spec (LRU cache)</text>
+    <text x="305" y="332">vague spec (debounce)</text>
+  </g>
+
+  <!-- ===== Right panel: tokens ===== -->
+  <text x="490" y="100" font-size="12.5" font-weight="600" fill="#0b0b0b">Codex tokens actually spent (fresh in + out, k)</text>
+  <g stroke="#e8e7e4" stroke-width="1">
+    <line x1="490" y1="255" x2="800" y2="255"/>
+    <line x1="490" y1="200" x2="800" y2="200"/>
+    <line x1="490" y1="145" x2="800" y2="145"/>
+  </g>
+  <line x1="490" y1="310" x2="800" y2="310" stroke="#d6d5d1"/>
+  <g font-size="10.5" fill="#52514e" text-anchor="end">
+    <text x="482" y="314">0</text>
+    <text x="482" y="259">25k</text>
+    <text x="482" y="204">50k</text>
+    <text x="482" y="149">75k</text>
+  </g>
+  <!-- scale: 2.2px per k -->
+  <g fill="#008300">
+    <path d="M510 310 v-63.5 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v63.5 z"/>
+    <path d="M650 310 v-159.9 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v159.9 z"/>
+  </g>
+  <g fill="#2a78d6">
+    <path d="M568 310 v-93.9 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v93.9 z"/>
+    <path d="M708 310 v-65.5 a4 4 0 0 1 4 -4 h44 a4 4 0 0 1 4 4 v65.5 z"/>
+  </g>
+  <g font-size="11" fill="#52514e" text-anchor="middle">
+    <text x="536" y="232">30.7</text>
+    <text x="594" y="201">44.5</text>
+    <text x="676" y="135">74.5</text>
+    <text x="734" y="230">31.6</text>
+  </g>
+  <g font-size="12" fill="#0b0b0b" text-anchor="middle">
+    <text x="565" y="332">clear spec (LRU cache)</text>
+    <text x="705" y="332">vague spec (debounce)</text>
+  </g>
+
+  <text x="32" y="368" font-size="11.5" fill="#0b0b0b" font-weight="600">When the spec was vague, codex alone burned 5.5× the time and 2.4× the tokens finding the semantics by trial and error.</text>
+  <text x="32" y="388" font-size="11" fill="#52514e">On the fully-specified task the harness cost ~45% overhead instead — maestro pays off where real work lives: ambiguity.</text>
+  <text x="32" y="408" font-size="11" fill="#52514e">Codex session records; identical task text per pair; Claude-side conductor writing ~0.5k tokens/task; n=1 per cell.</text>
+</svg>

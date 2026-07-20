@@ -59,17 +59,17 @@ Key mechanics, pinned as verbatim command templates in the skill (so they're ide
 - **Non-blocking dispatch** — `msg` runs in the background so Claude can observe, steer a drifting session mid-turn, or interrupt a runaway one.
 - **Crash-safe** — thread ids, baselines, and worktrees persist to `.maestro/state.json`; an interrupted run reattaches instead of orphaning sessions.
 
-## What it costs & how it thinks (measured)
+## Benchmark: maestro vs codex alone
 
-Numbers below are from maestro's own QA runs — five real work units (implement + test utilities) dispatched to live Codex sessions in July 2026. No synthetic benchmarks.
+A controlled head-to-head, run July 2026: the **same task text** given to a bare `codex exec` and to `/maestro`, same model, then both outputs blind-scored against a **hidden test suite written before either run** (the standard HumanEval-style method). One clearly-specified task (LRU cache with TTL) and one deliberately vague one (debounce with lodash semantics).
 
-![How much work goes into one task](docs/assets/token-cost.svg)
+![Same task, same model — with and without the conductor](docs/assets/benchmark-cost.svg)
 
-> **Takeaway:** one finished task ≈ a 50–85-page read and a 4–10-page write for the model. The million-token totals you'd see in provider logs are ~90% cached re-reads of the same context, which are nearly free — the bars above are the real work.
+> **Takeaway:** on the vague task, codex alone took **7.2 min and 74.5k tokens** finding the semantics by trial and error; maestro finished in **1.3 min and 31.6k tokens** because the conductor pinned the spec before dispatch. On the clear task the roles reverse (~45% harness overhead) — which is why the skill's Phase 1 tells you when a task is small enough to skip the ceremony.
 
-![It thinks harder only when the task deserves it](docs/assets/effort-scaling.svg)
+![Correctness, scored the HumanEval way](docs/assets/benchmark-quality.svg)
 
-> **Takeaway:** maestro matches the thinking budget to the task — simple utilities get ~550 thinking tokens, features with edge cases get 2–5× more. Deep reasoning is spent only where it pays.
+> **Takeaway:** correctness tied at 100% (22/22 hidden tests each) — the difference isn't whether the code works, it's that maestro's result arrives **already verified** against diff + tests, at a fraction of the cost precisely when the spec is fuzzy.
 
 What the QA runs also exercised, end to end:
 

@@ -57,6 +57,7 @@ If `<target-repo>/.maestro/state.json` exists, a previous maestro run was interr
 
 ## Phase 1 — Analyze & Split *(judgment)*
 
+0. **Right-size the ceremony.** Benchmarked honestly: on a small, fully-specified, single-file task, the harness adds ~40–50% time/token overhead over a bare `codex exec` with no quality gain — its spec-expansion pays off on ambiguous or multi-part tasks (measured 5.5× faster, 2.4× cheaper there). So: for a trivial well-specified one-liner-ish task, say so and offer the user the cheap path (direct edit or bare dispatch with terse criteria, `--effort low`); reserve full ceremony (elaborate criteria, observation cadence, parallel machinery) for tasks with ambiguity, edge cases, or multiple units.
 1. Restate the task. Derive **testable acceptance criteria** per work unit — never dispatch a bare task prompt.
 2. Decide **single session vs N parallel sessions**. **Hard cap: 4 concurrent sessions** — more units than that queue behind the first wave. Parallel ONLY when all three hold:
    - units are independent (no ordering dependency), AND
