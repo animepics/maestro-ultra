@@ -76,6 +76,13 @@ If `<target-repo>/.maestro/state.json` exists, a previous maestro run was interr
 
 0. **Right-size the ceremony.** Benchmarked honestly: on a small, fully-specified, single-file task, the harness adds ~40–50% time/token overhead over a bare `codex exec` with no quality gain — its spec-expansion pays off on ambiguous or multi-part tasks (measured 5.5× faster, 2.4× cheaper there). So: for a trivial well-specified one-liner-ish task, say so and offer the user the cheap path (direct edit or bare dispatch with terse criteria, `--effort low`); reserve full ceremony (elaborate criteria, observation cadence, parallel machinery) for tasks with ambiguity, edge cases, or multiple units.
 1. Restate the task. Derive **testable acceptance criteria** per work unit — never dispatch a bare task prompt.
+
+   **Criteria-quality gate** *(judgment — binds to step 0: runs with full ceremony, SKIPPED entirely on the cheap path)*. Before dispatch, check every derived criterion against four properties and rewrite any that fail:
+   - **Testable** — a mechanical check (diff / build / test / inspection) can decide it, not a vibe.
+   - **Falsifiable** — it states a condition that can concretely fail. Operational example: *"parses file X"* FAILs the gate (it passes as long as anything happens); *"emits an explicit error on a malformed X instead of silently continuing"* PASSes (a named failure mode you can force and observe).
+   - **Disjoint-scoped** — criteria don't overlap; each owns one outcome, so a single failure points at one place.
+   - **Failure-mode-aware** — at least one criterion names what going wrong looks like (malformed input, empty, boundary), not only the happy path.
+   Granularity scales with the unit's routed model *(judgment)*: a light-tier unit (downshifted in step 3) gets finer-grained criteria — smaller, more numerous — because a weaker performer needs the target pinned tighter. This is granularity of the **destination**, not the procedure (still no step-by-step scripts — see `references/prompting-codex.md`). *(Vocabulary here echoes the `self-correction-loop` skill — treat its terms as a v0.1-draft framing, not a fixed contract.)*
 2. Decide **single session vs N parallel sessions**. **Hard cap: 4 concurrent sessions** — more units than that queue behind the first wave. Parallel ONLY when all three hold:
    - units are independent (no ordering dependency), AND
    - units touch **disjoint directories** (not merely disjoint files — a shared git index, lockfiles, and build artifacts break attribution), AND
@@ -91,6 +98,8 @@ If `<target-repo>/.maestro/state.json` exists, a previous maestro run was interr
    - **Report**: state per unit, in the dispatch report, the chosen (model, effort, injected skills — Phase 2) and one line of reasoning. Never route silently.
 4. **Anti-overengineering is part of every dispatch** *(judgment)*: every prompt's Do section MUST include a minimalism decision rule (e.g., "implement the smallest standard-library solution that satisfies the criteria; no new dependencies, no speculative abstractions, no features beyond the criteria"), and Phase 4 review MUST check the diff for overengineering (unrequested features, needless layers/config, premature generalization) — overengineered-but-working output is a verification FAIL with a rework instruction to simplify.
 5. **Report the decision and reasoning to the user before dispatching.**
+
+**Spec echo-back** *(judgment — ambiguous/multi-part tasks only, bound to step 0: the cheap path structurally skips this)*. Before dispatch, echo the derived spec (restated task + unit split + acceptance criteria) back to the user for a quick confirm — via AskUserQuestion where available. This is a **destination** confirm ("did I understand the outcome and its criteria?"), not a procedure walkthrough. Non-interactive/autonomous fallback: when the autonomy discriminator is positive (same signal as the Phase-5 breaker — the `"The boulder never stops"` reminder or an explicit autopilot/ralph flag), do NOT wait; log the stated assumptions and proceed, so an autonomous run never deadlocks on an absent human. Absent any autonomy signal, treat the run as interactive and wait for the confirm.
 
 ## Phase 2 — Dispatch *(mechanics + judgment)*
 
@@ -154,13 +163,27 @@ node $SCRIPT msg <threadId> "<prompt>" --approve --timeout <fit-to-task-size>   
 - `run_in_background` is required: `msg` blocks synchronously until the turn completes, which would make observation/steering impossible and serialize parallel dispatch.
 - `--approve` is required: without it, file-change AND command-execution approvals are auto-declined and the session stalls writing nothing.
 
-**State persistence** *(mechanics — immediately after dispatching)*: write `<target-repo>/.maestro/state.json` recording, per unit: `unitSlug`, `threadId`, `cwd` (worktree or repo), `baseline` SHA, `branch` (parallel only), `acceptanceCriteria`, `dispatchedAt`, `phase`. Update `phase` as each unit moves through observe → verify → rework/done. This is what makes Phase 0 resume possible after a crash — without it, running Codex sessions are orphaned. Ensure `.maestro/` is not committed (add to the target repo's local excludes: `echo .maestro/ >> <repo>/.git/info/exclude`). Delete `state.json` at the end of a fully completed run.
+**State persistence** *(mechanics — immediately after dispatching)*: write `<target-repo>/.maestro/state.json` recording, per unit: `unitSlug`, `threadId`, `cwd` (worktree or repo), `baseline` SHA, `branch` (parallel only), `acceptanceCriteria`, `dispatchedAt`, `phase`, plus (quota handover — Phase 5) `performer: "codex"|"fable"`, `degraded`, `dependentsParked: true`, and `lastTurnError: {message, willRetry, at}` (a carry-field: what LIVE streaming observed, for resume reference — advisory only, NEVER a substitute for the re-probe, since `read` cannot re-derive `willRetry`). Update `phase` as each unit moves through observe → verify → rework/done; on quota recovery record the transition here (`performer` flips back to `codex`, `degraded`/`dependentsParked` cleared — at the unit/dispatch boundary only). This is what makes Phase 0 resume possible after a crash — without it, running Codex sessions are orphaned. Ensure `.maestro/` is not committed (add to the target repo's local excludes: `echo .maestro/ >> <repo>/.git/info/exclude`). Delete `state.json` at the end of a fully completed run.
 
 ## Phase 3 — Observe *(mechanics + judgment)*
 
 While background `msg` runs: poll `node $SCRIPT active` and `node $SCRIPT read <threadId>`; summarize progress for the user. `steer <threadId> "<corrective delta>"` when a session drifts from its criteria *(judgment)*; `interrupt <threadId>` for runaway turns. On msg timeout the turn continues server-side: keep polling `read` — never re-`msg` blindly.
 
 *(Steer-during-background-msg is verified working: steer opens its own connection while the background msg holds one, injects into the running turn, and the delta is incorporated. If steer ever errors, fall back to interrupt + a rework msg.)*
+
+## maestro-workflows — at-a-glance status *(judgment + mechanics)*
+
+Triggered by the user saying "maestro-workflows" / "/maestro workflows" (any "what are the performers doing right now"). On demand, render ONE combined table of ALL currently running performers *(judgment — only the conductor can render this MIXED view; the transport scripts are codex-side only)*:
+
+- **Codex sessions** *(mechanics)*: `.maestro/state.json` (unit rows) + `node $SCRIPT active` (in-flight threads) + `node $SCRIPT read <threadId>` (phase / last event) per thread.
+- **Claude background subagents/tasks** *(judgment)*: the conductor's own dispatched Fable/subagent work — visible ONLY to the conductor, never to the transport.
+
+| UNIT | PERFORMER | THREAD | MODEL | PHASE/STATUS | LAST EVENT | ELAPSED |
+|---|---|---|---|---|---|---|
+
+- **Empty state** *(judgment)*: no live performers → say "no active performers" honestly; still list `state.json` units not yet closed out, marked as such (no live thread).
+- **codex-side alternative** *(mechanics)*: `node $SCRIPT workflows [--watch]` renders the same table live/pretty — but **codex-side only** (Claude subagents are invisible to it). Use it for a live/auto-refreshing view; the conductor's mixed report for completeness.
+- Enumerating the conductor's own background tasks needs live verification — [live: confirm the conductor can actually list its dispatched Claude background tasks; if it can't, state that limit in the report].
 
 ## Phase 4 — Verify *(mechanics templates + judgment review)* — per unit, as each completes
 
@@ -184,11 +207,63 @@ Nothing found → say "no build/test harness detected" in the report; diff revie
 
 Review the diff against **each** acceptance criterion *(judgment)*. Produce a per-unit **Verification Report**: criterion → pass/fail → evidence (diff hunk / test output).
 
+**Outcome ledger** *(mechanics — append ONE line per unit at verification close, conductor-side only)*. This is the append-only `.maestro/metrics.jsonl` — a **separate** file from `state.json` with the opposite lifecycle: `state.json` is ephemeral crash-recovery scratch deleted at run end (Cleanup); `metrics.jsonl` is durable outcome history and is **NEVER deleted**. It accumulates locally on this machine only (no upload, no aggregation service — scope it honestly). Pin it to the **main repo** even when the unit ran in a linked worktree cwd:
+
+```bash
+# Resolve to the MAIN repo's .maestro/ (worktree cwds must still write here):
+LEDGER_DIR="$(dirname "$(git -C <unit-cwd> rev-parse --path-format=absolute --git-common-dir)")/.maestro"
+mkdir -p "$LEDGER_DIR"
+# --path-format=absolute is required: bare --git-common-dir can return a relative .git.
+
+# Append one line (node validates the JSON, then appends — schema is fixed):
+node -e 'require("fs").appendFileSync(process.argv[2], JSON.stringify(JSON.parse(process.argv[1]))+"\n")' \
+  '{"unitSlug":"<slug>","ranAt":"<iso8601>","model":"<model>","effort":"<effort>","criteriaCount":<post-rewrite count>,"firstAttemptPass":<bool>,"reworkRounds":<int>,"reElevated":<bool>,"resolvedBy":"codex|fable-breaker|fable-quota|user|aborted","outcome":"done|escalated","baselineSha":"<sha>"}' \
+  "$LEDGER_DIR/metrics.jsonl"
+```
+
+Two OPTIONAL fields attach to quota-handover units (Phase 5 Quota-exhaustion handover) — omit them otherwise: `"degraded":true` (autonomous takeover with no independent oracle) and `"oracle":"baseline-tests"|"hidden-suite"|"none"`.
+
+`criteriaCount` is the post-rewrite count when a criterion was re-elevated (Phase 5), with `reElevated:true`. `resolvedBy` separates who closed the unit so a Fable rescue, quota takeover, or user intervention never pollutes the first-attempt-pass stat — `fable-quota` marks a Codex→Fable quota handover and is excluded from that aggregation exactly like `fable-breaker`. Reader (node, not jq — node is already a prerequisite; first-attempt-pass rate over Codex-resolved units, excluding fable-quota/fable-breaker/user/aborted units):
+
+```bash
+node -e 'const r=require("fs").readFileSync(process.argv[1],"utf8").trim().split("\n").filter(Boolean).map(JSON.parse); const c=r.filter(x=>x.resolvedBy==="codex"); console.log(`first-attempt-pass: ${c.filter(x=>x.firstAttemptPass).length}/${c.length}`)' "$LEDGER_DIR/metrics.jsonl"
+```
+
 ## Phase 5 — Rework loop *(judgment)*
 
 **Root-cause before consuming a round:** if a failing criterion reproduces independently of the session's changes — e.g., a harness-supplied test command that cannot pass in this environment, a broken fixture, or a criterion contradicting the repo — it is a **conductor/environment defect, not a Codex defect**: fix it conductor-side (or amend the criterion), re-verify, and do NOT consume a rework round. Sessions that correctly flag such blockers in their answer instead of hacking around them are behaving well.
 
+**Convergence re-elevation** *(judgment)*. When the SAME criterion fails twice for the SAME reason across rework rounds, stop reworking the code against it — the criterion itself is the defect. Rewrite it (per the Phase-1 criteria-quality gate) and re-dispatch, recording `reElevated:true` and the post-rewrite `criteriaCount` in the ledger. This is the **intended cross-referenced exception** to the rule directly above ("a criterion contradicting the repo … does NOT consume a rework round"): repeated same-reason failure is the deliberate signal that the criterion is broken, so it is re-elevated rather than hacked around — but, unlike the single repo-contradiction case, re-elevation is bounded by the EXISTING ≤3 rework budget and NEVER opens a fresh round, precisely to prevent an unbounded rewrite→re-dispatch loop.
+
 On genuine work defects: `msg` the SAME thread (same `--approve`/background mechanics) with the concrete defect list and unmet criteria — **≤3 rounds total**. After round 3: escalate to the user with per-criterion status, diff summary, and a recommended next action.
+
+**Fable-takeover terminal breaker** *(judgment — a bounded terminal for the autonomous branch, NOT a new phase)*. The round-3 escalate above assumes a human to escalate *to*; an autonomous run has none, so the loop would end unresolved. This breaker supplies a 'resolved' terminal for that case only, and fires ONLY when ALL FOUR hold:
+1. **Round 3 exhausted** — the ≤3 budget is spent and the unit still fails.
+2. **Autonomous discriminator POSITIVE** — an explicit autonomy signal is present in context: the OMC ralph/ultrawork hook reminder `"The boulder never stops"`, or an explicit autopilot/ralph flag. Signal absent = interactive = escalate to the user (the fail-safe default; this is where interactive/autonomous vocabulary enters the skill).
+3. **Independent oracle exists** — tests present at the recorded baseline SHA, or a conductor-written Phase-1 hidden suite (prefer the baseline harness). It must NOT be tests authored or modified during this run, and **Fable is FORBIDDEN from editing any test file during takeover** — the performer must never write its own scorecard. No independent oracle (a diff-review-only unit) → escalate/abort, never takeover.
+4. **Ledger + echo-back state healthy** — if either is uncertain, treat as unhealthy → escalate.
+
+Then **≤1 Fable attempt.** Oracle still fails → **terminal abort**: write the ledger line with `resolvedBy:"aborted"` and `outcome:"escalated"`, preserve the branch/worktree for human review, never loop. Oracle passes → `resolvedBy:"fable-breaker"` (excluded from the first-attempt-pass stat, per the ledger reader).
+
+**Quota-exhaustion handover** *(judgment — a performer-swap, distinct from Clause A above; sits next to it but is NOT a loop-breaker)*. Codex can exhaust its token/rate quota; the conductor recognizes this and lets Fable (Claude) finish the unit.
+
+**Distinction vs Clause A** *(the one sentence that separates them)*: Clause A is a terminal loop-breaker fired after 3 failed rework rounds (strict gates, ≤1 attempt); a quota handover is a performer-swap with **NO failure history** — quota is external resource exhaustion, not a difficulty signal, so the clean-completion prior is high and the oracle requirement relaxes (used if present, degraded-and-gated if absent) — but the same honesty rules bind.
+
+Recognition, split by observation surface *(mechanics-flavored judgment)*:
+- **(i) LIVE dispatch-turn streaming** — a `turnError` event whose `error.message` is quota/rate-limit-shaped AND `willRetry=false` = quota exhaustion (`willRetry` exists only on the live `error` notification — `ErrorNotificationParamsSchema`).
+- **(ii) resume / `read` path** — a thread `read` can NEVER carry `willRetry` (`TurnSchema` has no such field — schema fact). Recognize by `Status: failed` + a quota-shaped `error.message` ONLY, and **re-probe** (a minimal fresh `msg` or `status` check) confirming exhaustion is still current before declaring it — never assume from a stale message.
+- Exact quota message strings are unverified — [live: capture the real string on first occurrence and pin it here].
+
+Handover semantics *(judgment)*:
+- **Pre-dispatch exhaustion** (first turn fails immediately, no Codex output) → Fable starts the unit clean as a normal working session.
+- **Mid-turn exhaustion** → first safety-net commit Codex's partial work (Cleanup step-1 mechanics), then Fable continues **in the SAME worktree, SAME `maestro/<slug>` branch** — never switches branches — and commits there. Fable follows the SAME acceptance criteria; standard diff-vs-`<baseline>` verification still applies.
+
+Gating *(judgment — autonomy discriminator is the SAME signal as Clause A: `"The boulder never stops"` / autopilot·ralph flag; signal absent = interactive)*:
+- **Interactive** → offer the user the choice (continue with Fable now / wait for quota reset) via AskUserQuestion.
+- **Autonomous + independent oracle exists** (baseline tests / a Phase-1 hidden suite; Fable never edits tests) → proceed, verify with that oracle, normal routing.
+- **Autonomous + no oracle** → the unit still completes but is labeled `conductor-authored + conductor-verified (no independent oracle)` in the report, AND dependents are NOT dispatched on top — dependent units are **parked** and surfaced at run end together with all degraded units (a run-end human-review gate). Never claim an evidence-free "pass".
+
+Recovery *(judgment)*: when Codex quota returns, resume normal routing only at the NEXT unit/dispatch boundary — never swap a unit back to Codex mid-unit.
 
 ## Cleanup *(mechanics — parallel runs only)* — per accepted unit, after verification
 
@@ -206,7 +281,7 @@ git -C <repo> worktree remove --force <repo>-maestro-<unit-slug>
 git -C <repo> branch -D maestro/<unit-slug>
 ```
 
-Rejected units: report the diff before removal, never silently discard; then the same remove commands. When every unit is closed out, delete `<repo>/.maestro/state.json`.
+Rejected units: report the diff before removal, never silently discard; then the same remove commands. When every unit is closed out, delete `<repo>/.maestro/state.json` — but NEVER delete `.maestro/metrics.jsonl` (the outcome ledger is durable history; only the ephemeral `state.json` is removed).
 
 ## Troubleshooting
 

@@ -49,6 +49,7 @@ Acceptance criteria:
 - **ALWAYS/NEVER are for true invariants only.** Judgment calls go under Do as decision rules.
 - **Name file paths instead of pasting contents** — the session has filesystem access in its cwd.
 - **`steer` is a delta, not a re-prompt.** Send only what changed: the corrected constraint and updated Expected result. Never replay the original prompt.
+- **Acceptance criteria must be falsifiable.** Each names a mechanical check and at least one names a failure mode (malformed/empty/boundary): *"parses X"* is not a criterion (it passes as long as anything happens); *"errors explicitly on a malformed X"* is. See SKILL.md Phase 1's criteria-quality gate.
 - A long Don't section means the Goal is underspecified.
 
 ## Example 1 — single-unit dispatch (real, from maestro's smoke test)
