@@ -14,9 +14,10 @@
 
 <img src="docs/assets/maestro-ultra-hero.jpg" alt="maestro-ultra — the conductor at work" width="440">
 
-<p>Claude hooks the Codex app-server and becomes the maestro: prompt Claude once,<br>
-and it plans, dispatches, and verifies real Codex sessions — merging only on diff + test evidence.<br>
-Eight <a href="https://github.com/rlaope/ultraprompt">ultraprompt</a> skills teach the dispatched models to reason like Fable 5.</p>
+<h3><i>Intelligence, orchestrated.</i></h3>
+
+<p>Claude takes the podium. Codex becomes the orchestra.<br>
+Intent goes in — evidence-verified code comes out. Nothing merges on trust.</p>
 
 </div>
 
