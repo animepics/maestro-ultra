@@ -6,6 +6,26 @@ Maestro is an orchestration harness for people who run both Claude Code and the 
 
 The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
 
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/install.sh | sh
+```
+
+Or just tell your coding agent:
+
+```text
+hey, install this: https://github.com/animepics/maestro-ultra
+```
+
+Clones to `~/.maestro` (override with `MAESTRO_DIR`), installs the transport's npm dependencies, and symlinks the skill into `~/.claude/skills/`. From a local checkout, `./install.sh` does the same without cloning. Then, in Claude Code:
+
+```
+/maestro "implement a slugify utility with full test coverage"
+```
+
+See [Prerequisites](#prerequisites) for what must be running first — the skill's preflight checks it all and tells you exactly what's missing.
+
 ## Architecture
 
 How Claude hooks the Codex app-server:
@@ -74,17 +94,7 @@ What the QA runs also exercised, end to end:
 | Model/effort per unit | chosen by Claude per difficulty (`--model`, `--effort`) | flags, chosen by you | chosen by you |
 | Overengineering control | minimalism rule in every prompt + checked at review | — | — |
 
-## Install
-
-One command:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/install.sh | sh
-```
-
-This clones the repo to `~/.maestro` (override with `MAESTRO_DIR`), installs the transport's npm dependencies, and symlinks the skill into `~/.claude/skills/`. From a local checkout, `./install.sh` does the same without cloning.
-
-### Prerequisites
+## Prerequisites
 
 - [Codex CLI](https://github.com/openai/codex) with app-server support, running as `codex app-server`, and **signed in** (`codex login` — requires a ChatGPT account with an eligible plan: Plus/Pro/Team/Enterprise)
 - Node with TypeScript type-stripping (≥ 23.6 guaranteed; 22.18+ typically works) or Bun
