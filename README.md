@@ -80,17 +80,17 @@ Key mechanics, pinned as verbatim command templates in the skill (so they're ide
 
 ## Benchmark: maestro vs codex alone
 
-A controlled head-to-head, run July 2026: the **same task text** given to a bare `codex exec` and to `/maestro`, same model, then both outputs blind-scored against a **hidden test suite written before either run** (the standard HumanEval-style method). One clearly-specified task (LRU cache with TTL) and one deliberately vague one (debounce with lodash semantics).
+Head-to-head, July 2026: the **same task text** given to a bare `codex exec` and to `/maestro`, same model, scored against a **hidden test suite written before either run**. One clear-spec task, one deliberately vague one.
 
-![Same task, same model — with and without the conductor](docs/assets/benchmark-cost.svg)
+![Work time and tokens consumed](docs/assets/benchmark-cost.svg)
 
 > [!NOTE]
 > **Takeaway:** on the vague task, codex alone took **7.2 min and 74.5k tokens** finding the semantics by trial and error; maestro finished in **1.3 min and 31.6k tokens** because the conductor pinned the spec before dispatch. On the clear task the roles reverse (~45% harness overhead) — which is why the skill's Phase 1 tells you when a task is small enough to skip the ceremony.
 
-![Correctness, scored the HumanEval way](docs/assets/benchmark-quality.svg)
+![Correctness — hidden test pass rate](docs/assets/benchmark-quality.svg)
 
 > [!NOTE]
-> **Takeaway:** correctness tied at 100% (22/22 hidden tests each) — the difference isn't whether the code works, it's that maestro's result arrives **already verified** against diff + tests, at a fraction of the cost precisely when the spec is fuzzy.
+> **Takeaway:** correctness tied at 100% — the difference isn't whether the code works, it's that maestro's result arrives **already verified** against diff + tests, at a fraction of the cost precisely when the spec is fuzzy.
 
 What the QA runs also exercised, end to end:
 
