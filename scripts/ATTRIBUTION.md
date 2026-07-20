@@ -13,3 +13,7 @@ here; maestro-local changes should stay minimal to keep the diff against upstrea
   `model`/`effort` overrides (protocol v2 `TurnStartParams`) so the conductor can pick
   the model per work unit. (`lib/cli-args.ts`, `lib/turn-commands.ts`, tests in
   `lib/cli-args.test.ts`.)
+- `models` command: wraps the `model/list` RPC and prints the raw JSON response
+  (no vendored schema yet — same schema-less precedent as `status`), so the conductor
+  can discover the live model roster for per-unit routing. (`lib/cli-args.ts`,
+  `lib/commands.ts`, test in `lib/cli-args.test.ts`.)

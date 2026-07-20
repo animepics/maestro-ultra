@@ -19,6 +19,7 @@ export const USAGE = `usage: codex-query <command> [args] [flags]
           [--search term] [--cursor c] [--cwd path] [--archived]
   search <term...> [--limit n]          full-text thread search (experimental)
   active                                threads with a turn in flight
+  models                                models offered by the app-server (raw JSON)
   loaded                                thread ids loaded in server memory
   read <threadId> [--full]              thread details with recent turns
   answer <threadId>                     final agent message, full text
@@ -173,6 +174,12 @@ export async function runCommand(client: CodexClient, command: Command): Promise
     case "active":
       await runActive(client);
       return 0;
+    case "models": {
+      // No vendored schema for model/list yet; print the raw response like `status`.
+      const raw = await client.request("model/list", {});
+      console.log(JSON.stringify(raw, null, 2));
+      return 0;
+    }
     case "loaded": {
       const raw = await client.request("thread/loaded/list", {});
       const page = ThreadLoadedListResponseSchema.parse(raw);

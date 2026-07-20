@@ -17,6 +17,7 @@ export type Command =
     }
   | { readonly kind: "search"; readonly term: string; readonly limit: number }
   | { readonly kind: "active" }
+  | { readonly kind: "models" }
   | { readonly kind: "read"; readonly threadId: string; readonly full: boolean }
   | { readonly kind: "answer"; readonly threadId: string }
   | { readonly kind: "loaded" }
@@ -166,6 +167,8 @@ export function parseCliArgs(argv: readonly string[]): Result<Command, CliArgsEr
       return ok({ kind: "loaded" });
     case "active":
       return ok({ kind: "active" });
+    case "models":
+      return ok({ kind: "models" });
     case "clients": {
       const rawLimit = flags.values.get("limit");
       if (rawLimit === undefined) return ok({ kind: "clients" });

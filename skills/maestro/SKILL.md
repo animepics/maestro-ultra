@@ -13,9 +13,10 @@ Claude is the conductor (planning, judgment, verification); Codex is the perform
 
 - **Local same-machine only.** Diff/build/test verification requires Codex's cwd on the same host as Claude. Remote `HOST=` app-servers are out of scope.
 - **Server-default sandbox.** Sandbox policy uses the app-server's default config. (Model and reasoning effort ARE selectable per unit — see Phase 1.)
+- **Injected skill paths must be readable from the session's sandbox.** The `## Read first` injection (Phase 2) points sessions at files outside their cwd (`~/.claude/skills/...`); the app-server default sandbox permits out-of-cwd reads (verified live 2026-07-20). The Phase 3 read-compliance observation is the gate on nonstandard configs.
 - **Target cwd must be a git repository** — verification is diff-based.
 
-## Prerequisites & Preflight *(mechanics — run ALL before any dispatch; on any failure STOP and report the fix, do not dispatch)*
+## Prerequisites & Preflight *(mechanics — run ALL before any dispatch; on any failure STOP and report the fix, do not dispatch. Sole exception: step 4.5 is non-fatal)*
 
 ```bash
 # 1. Resolve transport (first path that exists — vendored copy first):
@@ -38,6 +39,9 @@ codex login status                          #   "Run `codex login` first. Codex 
 # 4. App-server reachable — this is the authoritative runtime check:
 node $SCRIPT status                         # syntax/type error → Node too old for TS type stripping: upgrade (≥23.6 guaranteed; 22.18+ typically works)
                                             # connection error → instruct: start codex app-server
+
+# 4.5 Model roster (OPTIONAL — the only non-fatal step; failure just disables routing):
+node $SCRIPT models                         # non-zero exit → note "roster unavailable, effort-only fallback engaged" and continue
 
 # 5. Each target cwd is a git repo:
 git -C <cwd> rev-parse --git-dir
@@ -64,11 +68,14 @@ If `<target-repo>/.maestro/state.json` exists, a previous maestro run was interr
    - units touch **disjoint directories** (not merely disjoint files — a shared git index, lockfiles, and build artifacts break attribution), AND
    - each unit is individually meaningful.
    Otherwise run single-session.
-3. **Model & effort per unit** *(judgment)*: pick the GPT model and reasoning effort to match each unit's difficulty — pass them via `msg --model <id> --effort <low|medium|high>`. Guidance:
-   - **Mechanical/small** (rename, boilerplate, single small function): default model, `--effort low`
-   - **Standard implementation** (feature + tests): default model, `--effort medium` (or omit both)
-   - **Hard** (debugging, tricky algorithms, cross-cutting refactors): default or strongest available model, `--effort high`
-   Omitted flags fall back to the app-server's configured default. State your model/effort choice per unit in the dispatch report.
+3. **Model & effort per unit — full-auto routing** *(judgment)*: route each unit across the live roster fetched in preflight 4.5 (`node $SCRIPT models`; per-model fields: `id`, `displayName`, `description`, `isDefault`, `hidden`, `supportedReasoningEfforts` with per-effort descriptions, `defaultReasoningEffort`). Pass choices via `msg --model <id> --effort <level>`.
+   - **Workhorse rule**: the gpt-5.6 family resolves most needs — route to it by default while it is on the roster. Prefer the roster's `isDefault: true` entry for standard/hard units; the family's fast/affordable tier (read `description`) covers lighter standard work. If no 5.6-family model is present, anchor on whatever entry is `isDefault` — never hard-fail on a missing literal name.
+   - **Downshift** to a light model (`description` says fast/affordable/ultra-fast; name says mini/nano/spark) ONLY for clearly mechanical units (rename, boilerplate, single small function).
+   - **Upshift** past the workhorse only when the roster offers something genuinely stronger AND the unit is genuinely hard (debugging, tricky algorithms, cross-cutting refactors).
+   - **Effort**: scale within the chosen model's `supportedReasoningEfforts` — mechanical → `low`; standard → the model's `defaultReasoningEffort` (or omit the flag); hard → `high` or above.
+   - **Unknown model names**: infer tier from `description` plus name heuristics (mini/nano/spark → light; higher version number → newer; codex-variants preferred for code). Still uncertain → the workhorse, or omit `--model` (server default).
+   - **Fallback**: `models` failed in preflight → omit `--model` entirely and use effort-only guidance: mechanical `--effort low`, standard `--effort medium` (or omit), hard `--effort high`.
+   - **Report**: state per unit, in the dispatch report, the chosen (model, effort, injected skills — Phase 2) and one line of reasoning. Never route silently.
 4. **Anti-overengineering is part of every dispatch** *(judgment)*: every prompt's Do section MUST include a minimalism decision rule (e.g., "implement the smallest standard-library solution that satisfies the criteria; no new dependencies, no speculative abstractions, no features beyond the criteria"), and Phase 4 review MUST check the diff for overengineering (unrequested features, needless layers/config, premature generalization) — overengineered-but-working output is a verification FAIL with a rework instruction to simplify.
 5. **Report the decision and reasoning to the user before dispatching.**
 
@@ -91,6 +98,39 @@ node $SCRIPT create <worktree-path>
 Two parallel sessions MUST NOT share a cwd. Single unit: `node $SCRIPT create <cwd>` directly — no worktree, no branch.
 
 **Prompt composition** *(judgment)*: READ `references/prompting-codex.md` (in this skill's directory) and follow its required shape — Goal / Do / Don't / Expected result / Test — **in English**, with the unit's acceptance criteria embedded verbatim. For parallel units, the Expected result MUST include: *"commit all your work on the current branch (`maestro/<unit-slug>`)"* — merge and cleanup operate on the branch tip.
+
+**Fable-style reasoning injection** *(judgment + mechanics)*: non-trivial units get a `## Read first` section at the very top of the prompt (before `## Goal`) directing the session to read strategy skills — the 8 ultraprompt axes vendored in this repo's `skills/` — so a sub-frontier model reasons closer to how the conductor does. Trivial units SKIP injection entirely (reading two skills costs the session ~3–4k tokens; don't spend it on a one-liner).
+
+Axis selection *(judgment — default mapping; deviating is fine when you say why in the dispatch report)*:
+
+| Unit smells like | Inject |
+|---|---|
+| debugging / root-causing | hypothesis-management + self-correction-loop |
+| implementing a spec / RFC / paper | spec-to-code-fidelity |
+| design / greenfield | tradeoff-articulation + failure-mode-enumeration |
+| refactor / large change | incremental-safety + exploration-strategy |
+| unfamiliar codebase | exploration-strategy |
+
+Hard cap: 3 selected axes per dispatch. `verification-discipline` is ALWAYS added on top — it is the floor and does not count toward the cap.
+
+Path resolution *(mechanics — run per axis BEFORE composing the prompt; never inject a path you didn't verify exists)*:
+
+```bash
+AXIS=~/.claude/skills/<axis>/SKILL.md
+[ -f "$AXIS" ] || AXIS=<maestro-repo>/skills/<axis>/SKILL.md
+[ -f "$AXIS" ] || AXIS=""   # neither exists → skip this axis, note it in the dispatch report
+```
+
+Template *(mechanics — prepend verbatim, resolved absolute paths)*:
+
+```text
+## Read first
+Before writing any code, READ these files fully — they define the reasoning discipline required for this task:
+- <axis-path-1>
+- <axis-path-2>
+```
+
+Out-of-cwd reads are permitted by the app-server default sandbox (verified live). If Phase 3 observation shows the files were NOT read, `steer <threadId> "Read the files listed under ## Read first before continuing."` once — a conductor-side compliance nudge, it does not consume a rework round.
 
 **Send — non-blocking** *(mechanics)*:
 

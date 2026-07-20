@@ -11,6 +11,15 @@ Every prompt maestro sends into a Codex session (`msg`, first message, `steer`) 
 The model is outcome-first: define the destination, constraints, and evidence, then let it choose the path. Every dispatch prompt MUST contain these sections, each kept short (1–3 lines):
 
 ```text
+## Read first
+[OPTIONAL — non-trivial units only. Resolved absolute paths to the selected
+strategy skills (SKILL.md Phase 2: mapping table, cap 3, verification-discipline
+always). Omit the whole section for trivial units.]
+Before writing any code, READ these files fully — they define the reasoning
+discipline required for this task:
+- /abs/path/to/skills/<axis-1>/SKILL.md
+- /abs/path/to/skills/<axis-2>/SKILL.md
+
 ## Goal
 [user-visible outcome, 1-2 sentences]
 

@@ -1,13 +1,27 @@
+<div align="center">
+
 # maestro-ultra
 
 **Claude conducts. Codex performs. And every agent learns to reason like the stronger model.**
+
+[![Release](https://img.shields.io/github/v/release/animepics/maestro-ultra?color=2a78d6&label=release)](https://github.com/animepics/maestro-ultra/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-008300.svg)](CONTRIBUTING.md)
+[![Conductor: Claude Code](https://img.shields.io/badge/conductor-Claude%20Code-8A63D2)](https://claude.com/claude-code)
+[![Performer: Codex CLI](https://img.shields.io/badge/performer-Codex%20CLI-008300)](https://github.com/openai/codex)
+[![Strategy skills](https://img.shields.io/badge/strategy%20skills-8-2a78d6)](#strategy-skills--reasoning-like-the-stronger-model)
+
+<img src="docs/assets/maestro-ultra-hero.jpg" alt="maestro-ultra — the conductor at work" width="440">
+
+</div>
 
 Two things live here, built to work together:
 
 1. **`/maestro`** — an orchestration harness for people who run both Claude Code and the Codex CLI. One invocation has Claude analyze the task, write testable acceptance criteria, dispatch the implementation to real Codex sessions over the app-server protocol, watch them run, and verify the results against hard evidence before anything merges.
 2. **Eight strategy skills** (merged from [ultraprompt](https://github.com/rlaope/ultraprompt)) — portable reasoning prompts distilled from how a frontier model (Claude Fable 5) actually solves problems, written to make any sub-frontier agent — Opus, a Codex session, anything that reads a system prompt — explore, verify, and self-correct the way the stronger model does.
 
-The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
+> [!IMPORTANT]
+> The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
 
 ## Install
 
@@ -15,11 +29,12 @@ The philosophy is a strict division of labor: **Claude is the conductor** (plann
 curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/install.sh | sh
 ```
 
-Or just tell your coding agent:
-
-```text
-hey, install this: https://github.com/animepics/maestro-ultra
-```
+> [!TIP]
+> No terminal needed — just tell your coding agent:
+>
+> ```text
+> hey, install this: https://github.com/animepics/maestro-ultra
+> ```
 
 Clones to `~/.maestro` (override with `MAESTRO_DIR`), installs the transport's npm dependencies, and symlinks the skill into `~/.claude/skills/`. From a local checkout, `./install.sh` does the same without cloning. Then, in Claude Code:
 
@@ -68,10 +83,12 @@ A controlled head-to-head, run July 2026: the **same task text** given to a bare
 
 ![Same task, same model — with and without the conductor](docs/assets/benchmark-cost.svg)
 
+> [!NOTE]
 > **Takeaway:** on the vague task, codex alone took **7.2 min and 74.5k tokens** finding the semantics by trial and error; maestro finished in **1.3 min and 31.6k tokens** because the conductor pinned the spec before dispatch. On the clear task the roles reverse (~45% harness overhead) — which is why the skill's Phase 1 tells you when a task is small enough to skip the ceremony.
 
 ![Correctness, scored the HumanEval way](docs/assets/benchmark-quality.svg)
 
+> [!NOTE]
 > **Takeaway:** correctness tied at 100% (22/22 hidden tests each) — the difference isn't whether the code works, it's that maestro's result arrives **already verified** against diff + tests, at a fraction of the cost precisely when the spec is fuzzy.
 
 What the QA runs also exercised, end to end:
@@ -94,7 +111,8 @@ What the QA runs also exercised, end to end:
 | Mid-turn correction | `steer` / `interrupt` | not possible | possible, manual |
 | Rework on failure | automatic, defect-named, ≤3 rounds, then escalation | re-run and re-explain | manual |
 | Crash recovery | `.maestro/state.json` resume | n/a | state in your head |
-| Model/effort per unit | chosen by Claude per difficulty (`--model`, `--effort`) | flags, chosen by you | chosen by you |
+| Model/effort per unit | auto-routed from the live roster (`models` RPC; gpt-5.6-family workhorse, light models for mechanical units) | flags, chosen by you | chosen by you |
+| Reasoning quality on smaller models | strategy skills injected per unit (`## Read first`) | — | — |
 | Overengineering control | minimalism rule in every prompt + checked at review | — | — |
 
 ## Prerequisites
@@ -104,7 +122,8 @@ What the QA runs also exercised, end to end:
 - Target projects must be git repositories (verification is diff-based)
 - v1 scope: local same-machine only; sandbox policy uses the app-server default
 
-The skill's preflight checks all of this before any dispatch and tells you exactly what's missing — including when you're not logged in to Codex.
+> [!WARNING]
+> Not signed in to Codex (or no eligible ChatGPT plan)? Nothing will dispatch. The skill's preflight checks all of this before any dispatch and tells you exactly what's missing — including when you're not logged in.
 
 Then, in Claude Code:
 
@@ -145,7 +164,18 @@ Merged from [ultraprompt](https://github.com/rlaope/ultraprompt): eight axis-sli
 | [spec-to-code-fidelity](skills/spec-to-code-fidelity/SKILL.md) | Cross-checking habits when translating an RFC, paper, or formula into code |
 | [incremental-safety](skills/incremental-safety/SKILL.md) | Splitting a large change into states that are each safe to stop at |
 
-They compose with the conductor: maestro's criteria derivation is `failure-mode-enumeration` applied before dispatch, its evidence rules are `verification-discipline`, and a Codex session that reads them (via `AGENTS.md` or a pasted skill) performs closer to how the conductor thinks.
+They compose with the conductor: maestro's criteria derivation is `failure-mode-enumeration` applied before dispatch, its evidence rules are `verification-discipline`, and a Codex session that reads them performs closer to how the conductor thinks.
+
+### Auto-routing + injection (v0.2)
+
+maestro wires both halves together per work unit, automatically:
+
+1. **Discovery** — preflight runs the new `models` command (wrapping the app-server's `model/list` RPC) and learns every model the codex account offers, with display metadata and supported reasoning efforts.
+2. **Routing** — Claude picks `(model, effort)` per unit: the gpt-5.6 family is the workhorse while it's on the roster, light/fast models are reserved for clearly mechanical units, and anything stronger is saved for genuinely hard ones. The choice and one-line reasoning are always reported before dispatch; if the roster can't be fetched, maestro degrades to effort-only flags on the server default.
+3. **Injection** — non-trivial dispatches open with a `## Read first` section pointing the session at the 2–3 most relevant strategy skills (mapping: debugging → hypothesis-management + self-correction-loop; spec work → spec-to-code-fidelity; design → tradeoff-articulation + failure-mode-enumeration; refactors → incremental-safety + exploration-strategy — `verification-discipline` always rides along). The dispatched model reads the same files you see above and reasons accordingly; trivial units skip the ceremony.
+
+> [!NOTE]
+> **Measured honestly** (n=3 per arm, hidden-suite blind scoring, weakest roster model): when the task is *within* the dispatched model's comfort zone, injection changes nothing — both arms scored 100% and the injected arm just paid ~+25s / ~+9k tokens reading skills it didn't need. That's exactly why the skill skips injection for trivial units, and why the mapping targets it at genuinely hard ones. Its effect on tasks that exceed the model's ability is still an open measurement.
 
 ## For Codex sessions
 
@@ -161,6 +191,10 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). Short version: `cd scripts && npm run 
 - **Per-task sandbox policy** — wrap the raw `config/value/write` RPC
 - **Minimal orchestration helper** — extract deterministic mechanics into code *only if* the verbatim prose templates prove insufficient in practice
 - **Rework-rate metrics** — criteria-pass-on-first-attempt tracking across runs
+
+## Maintainers
+
+- [@rlaope](https://github.com/rlaope)
 
 ## License
 

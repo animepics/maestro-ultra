@@ -116,6 +116,14 @@ describe("parseCliArgs search and active", () => {
     if (!result.ok) throw new Error(result.error.message);
     assert.deepEqual(result.value, { kind: "active" });
   });
+
+  it("parses the models command", () => {
+    // Given / When
+    const result = parseCliArgs(["models"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "models" });
+  });
 });
 
 describe("parseCliArgs failure modes", () => {
