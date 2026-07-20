@@ -126,6 +126,33 @@ describe("parseCliArgs search and active", () => {
   });
 });
 
+describe("parseCliArgs workflows", () => {
+  it("defaults to a one-shot (non-watch) view in the current directory", () => {
+    // Given / When
+    const result = parseCliArgs(["workflows"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "workflows", watch: false });
+  });
+
+  it("parses --watch and --cwd so the live table can target another repo", () => {
+    // Given / When
+    const result = parseCliArgs(["workflows", "--watch", "--cwd", "/repo/x"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "workflows", watch: true, cwd: "/repo/x" });
+  });
+
+  it("leaves cwd undefined when only --watch is given", () => {
+    // Given / When
+    const result = parseCliArgs(["workflows", "--watch"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    if (result.value.kind !== "workflows") throw new Error("wrong kind");
+    assert.equal(result.value.cwd, undefined);
+  });
+});
+
 describe("parseCliArgs failure modes", () => {
   it("returns a usage error naming the command when the command is unknown", () => {
     // Given / When

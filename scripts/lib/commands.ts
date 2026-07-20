@@ -1,9 +1,23 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { z } from "zod";
 import type { Command } from "./cli-args.ts";
 import type { CodexClient } from "./client.ts";
-import { formatClientLine, formatThreadLine, statusLabel, turnAgentText } from "./format.ts";
+import {
+  buildWorkflowRows,
+  formatClientLine,
+  formatThreadLine,
+  type MaestroUnit,
+  renderWorkflowTable,
+  shouldLiveWatch,
+  statusLabel,
+  turnAgentText,
+  WORKFLOWS_HEADER,
+} from "./format.ts";
 import {
   RemoteControlClientsListResponseSchema,
   RemoteControlStatusSchema,
+  type Thread,
   ThreadListResponseSchema,
   ThreadLoadedListResponseSchema,
   ThreadReadResponseSchema,
@@ -20,6 +34,8 @@ export const USAGE = `usage: codex-query <command> [args] [flags]
   search <term...> [--limit n]          full-text thread search (experimental)
   active                                threads with a turn in flight
   models                                models offered by the app-server (raw JSON)
+  workflows [--watch] [--cwd path]      codex-side workflow table merged with
+                                        .maestro/state.json (one-shot; --watch refreshes)
   loaded                                thread ids loaded in server memory
   read <threadId> [--full]              thread details with recent turns
   answer <threadId>                     final agent message, full text
@@ -142,6 +158,112 @@ async function runClients(client: CodexClient, limit: number | undefined): Promi
   return 0;
 }
 
+// state.json is authored in prose by the conductor, so parse it liberally:
+// accept either a bare unit array or a { units: [...] } wrapper, and keep
+// unknown fields. A missing/unreadable file degrades to "no units".
+const MaestroUnitSchema = z
+  .object({
+    unitSlug: z.string(),
+    threadId: z.string().nullish(),
+    branch: z.string().nullish(),
+    phase: z.string().nullish(),
+    baseline: z.string().nullish(),
+    model: z.string().nullish(),
+  })
+  .loose();
+
+const MaestroStateSchema = z.union([
+  z.array(MaestroUnitSchema),
+  z.object({ units: z.array(MaestroUnitSchema) }).loose(),
+]);
+
+function toMaestroUnit(unit: z.infer<typeof MaestroUnitSchema>): MaestroUnit {
+  return {
+    unitSlug: unit.unitSlug,
+    ...(unit.threadId != null ? { threadId: unit.threadId } : {}),
+    ...(unit.branch != null ? { branch: unit.branch } : {}),
+    ...(unit.phase != null ? { phase: unit.phase } : {}),
+    ...(unit.baseline != null ? { baseline: unit.baseline } : {}),
+    ...(unit.model != null ? { model: unit.model } : {}),
+  };
+}
+
+function readMaestroState(cwd: string): readonly MaestroUnit[] {
+  const path = join(cwd, ".maestro", "state.json");
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch {
+    return []; // no state.json here — codex-only view
+  }
+  const parsed = MaestroStateSchema.safeParse(JSON.parse(raw));
+  if (!parsed.success) {
+    console.error(`[workflows] ignoring unreadable ${path}`);
+    return [];
+  }
+  const units = Array.isArray(parsed.data) ? parsed.data : parsed.data.units;
+  return units.map(toMaestroUnit);
+}
+
+async function fetchActiveThreadsWithTurns(client: CodexClient): Promise<readonly Thread[]> {
+  const raw = await client.request("thread/list", {
+    limit: 100,
+    sortKey: "recency_at",
+    sortDirection: "desc",
+  });
+  const page = ThreadListResponseSchema.parse(raw);
+  const active = page.data.filter((thread) => thread.status.type === "active");
+  return Promise.all(active.map((thread) => readThread(client, thread.id)));
+}
+
+async function renderWorkflowsOnce(client: CodexClient, cwd: string): Promise<void> {
+  const threads = await fetchActiveThreadsWithTurns(client);
+  const units = readMaestroState(cwd);
+  const rows = buildWorkflowRows(threads, units, Date.now());
+  console.log(WORKFLOWS_HEADER);
+  if (threads.length === 0) console.log("no active codex sessions");
+  if (rows.length > 0) console.log(renderWorkflowTable(rows));
+}
+
+const WORKFLOWS_REFRESH_MS = 2_000;
+
+// The codebase's first long-lived command. --watch on a TTY departs from the
+// one-shot connect→runCommand→close lifecycle: it drives its own refresh loop
+// and resolves only on SIGINT, so main()'s finally still owns client.close()
+// and the exit-0. Non-TTY degrades to one-shot (no ANSI noise in pipes).
+function watchWorkflows(client: CodexClient, cwd: string): Promise<number> {
+  return new Promise<number>((resolve) => {
+    let stopped = false;
+    process.once("SIGINT", () => {
+      stopped = true;
+      resolve(0);
+    });
+    const loop = async (): Promise<void> => {
+      while (!stopped) {
+        process.stdout.write("\x1b[2J\x1b[3J\x1b[H"); // clear screen + scrollback
+        await renderWorkflowsOnce(client, cwd);
+        await new Promise((tick) => setTimeout(tick, WORKFLOWS_REFRESH_MS));
+      }
+    };
+    void loop().catch((error: unknown) => {
+      console.error(String(error));
+      resolve(1);
+    });
+  });
+}
+
+async function runWorkflows(
+  client: CodexClient,
+  command: Extract<Command, { kind: "workflows" }>,
+): Promise<number> {
+  const cwd = command.cwd ?? process.cwd();
+  if (!shouldLiveWatch(command.watch, process.stdout.isTTY === true)) {
+    await renderWorkflowsOnce(client, cwd);
+    return 0;
+  }
+  return watchWorkflows(client, cwd);
+}
+
 export async function runCommand(client: CodexClient, command: Command): Promise<number> {
   switch (command.kind) {
     case "help":
@@ -217,6 +339,8 @@ export async function runCommand(client: CodexClient, command: Command): Promise
       return runSteer(client, command);
     case "interrupt":
       return runInterrupt(client, command);
+    case "workflows":
+      return runWorkflows(client, command);
     default:
       return assertNever(command);
   }

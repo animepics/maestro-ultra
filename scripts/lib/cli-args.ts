@@ -35,6 +35,7 @@ export type Command =
     }
   | { readonly kind: "steer"; readonly threadId: string; readonly text: string }
   | { readonly kind: "interrupt"; readonly threadId: string }
+  | { readonly kind: "workflows"; readonly watch: boolean; readonly cwd?: string }
   | { readonly kind: "help" };
 
 export type CliArgsError = { readonly kind: "usage"; readonly message: string };
@@ -50,7 +51,7 @@ const VALUE_FLAGS: ReadonlySet<string> = new Set([
   "model",
   "effort",
 ]);
-const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(["archived", "approve", "full"]);
+const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(["archived", "approve", "full", "watch"]);
 
 const SORT_ALIASES: Readonly<Record<string, ThreadSortKey>> = {
   created: "created_at",
@@ -169,6 +170,14 @@ export function parseCliArgs(argv: readonly string[]): Result<Command, CliArgsEr
       return ok({ kind: "active" });
     case "models":
       return ok({ kind: "models" });
+    case "workflows": {
+      const cwd = flags.values.get("cwd");
+      return ok({
+        kind: "workflows",
+        watch: flags.booleans.has("watch"),
+        ...(cwd !== undefined ? { cwd } : {}),
+      });
+    }
     case "clients": {
       const rawLimit = flags.values.get("limit");
       if (rawLimit === undefined) return ok({ kind: "clients" });
