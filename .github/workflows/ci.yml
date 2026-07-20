@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: check (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 22 = minimum with TS type-stripping backport; 24 = current LTS line
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Install transport dependencies
+        working-directory: scripts
+        run: npm ci
+      - name: biome + tsc + tests
+        working-directory: scripts
+        run: npm run check
+
+  install-sh:
+    name: install.sh (local-checkout mode)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run installer from a local checkout
+        run: ./install.sh
+      - name: Assert skills were linked
+        run: |
+          for s in maestro exploration-strategy hypothesis-management verification-discipline \
+                   tradeoff-articulation failure-mode-enumeration self-correction-loop \
+                   spec-to-code-fidelity incremental-safety; do
+            [ -e "$HOME/.claude/skills/$s/SKILL.md" ] || { echo "missing link: $s"; exit 1; }
+          done
+          echo "all skill links present"

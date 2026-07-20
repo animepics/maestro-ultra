@@ -4,6 +4,7 @@
 
 **Claude conducts. Codex performs. And every agent learns to reason like the stronger model.**
 
+[![CI](https://github.com/animepics/maestro-ultra/actions/workflows/ci.yml/badge.svg)](https://github.com/animepics/maestro-ultra/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/animepics/maestro-ultra?color=2a78d6&label=release)](https://github.com/animepics/maestro-ultra/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-008300.svg)](CONTRIBUTING.md)
