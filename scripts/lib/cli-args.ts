@@ -35,7 +35,12 @@ export type Command =
     }
   | { readonly kind: "steer"; readonly threadId: string; readonly text: string }
   | { readonly kind: "interrupt"; readonly threadId: string }
-  | { readonly kind: "workflows"; readonly watch: boolean; readonly cwd?: string }
+  | {
+      readonly kind: "workflows";
+      readonly watch: boolean;
+      readonly json: boolean;
+      readonly cwd?: string;
+    }
   | { readonly kind: "events"; readonly threadId: string; readonly follow: boolean }
   | { readonly kind: "help" };
 
@@ -57,6 +62,7 @@ const BOOLEAN_FLAGS: ReadonlySet<string> = new Set([
   "approve",
   "full",
   "watch",
+  "json",
   "follow",
 ]);
 
@@ -179,9 +185,13 @@ export function parseCliArgs(argv: readonly string[]): Result<Command, CliArgsEr
       return ok({ kind: "models" });
     case "workflows": {
       const cwd = flags.values.get("cwd");
+      const watch = flags.booleans.has("watch");
+      const json = flags.booleans.has("json");
+      if (watch && json) return usage("--json and --watch are incompatible");
       return ok({
         kind: "workflows",
-        watch: flags.booleans.has("watch"),
+        watch,
+        json,
         ...(cwd !== undefined ? { cwd } : {}),
       });
     }

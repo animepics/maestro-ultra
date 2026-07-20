@@ -32,3 +32,4 @@ here; maestro-local changes should stay minimal to keep the diff against upstrea
   `format.ts`, socket loop in `commands.ts`, matching the `workflows` precedent.
   (`lib/cli-args.ts`, `lib/commands.ts`, `lib/format.ts`, `lib/protocol.ts`, tests in
   `lib/cli-args.test.ts` and `lib/format.test.ts`.)
+- `workflows --json` adds a machine-readable one-shot row array without changing RPCs or dependencies.
