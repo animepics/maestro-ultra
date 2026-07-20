@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 — 2026-07-20
+
+Dispatch-quality gate, outcome ledger, and autonomous rework governance.
+
+- Phase 1 **criteria-quality gate**: every derived criterion is checked as testable / falsifiable / disjoint-scoped / failure-mode-aware and rewritten if it fails; granularity scales with the routed model. Binds to the right-size-the-ceremony step (skipped on the cheap path).
+- **Spec echo-back** before dispatch on ambiguous/multi-part tasks (AskUserQuestion where available); autonomous runs log assumptions and proceed instead of deadlocking.
+- **Outcome ledger** `.maestro/metrics.jsonl`: append-only, one line per verified unit (model, effort, criteria count, first-attempt pass, rework rounds, `resolvedBy`), pinned to the main repo even from worktree cwds. Durable and never deleted (only ephemeral `state.json` is), same-machine local, node reader for the first-attempt-pass rate.
+- **Clause A — Fable-takeover terminal breaker**: on an autonomous run that exhausts the ≤3 rework budget, one Claude attempt fires only under four strict gates (round-3 exhausted, autonomy signal present, independent oracle exists, healthy state); Fable never edits test files; no oracle → terminal abort with the branch preserved.
+- **Quota-exhaustion handover**: when Codex quota runs out mid-run, the conductor commits partial work and lets Claude finish the unit in the same worktree/branch against the same criteria — offered interactively, gated autonomously (dependents parked, degraded units surfaced at run end when no independent oracle). Distinct from Clause A: a performer-swap with no failure history, not a loop-breaker.
+- **maestro-workflows**: on-demand combined status table of all live performers (Codex threads + the conductor's own background work); new codex-side `workflows [--watch]` transport subcommand renders the same table live (Codex threads only) — the transport's first long-lived command.
+- Four new draft strategy axes (state-probing, honest-reporting, delegation-parallelism, context-memory-hygiene) with `CASES.md` skeletons, plus `skills/_SIMULATION.md` (the distillation protocol) — all `v0.1 baseline draft` awaiting trace evidence. Skills are authored here and mirrored upstream to ultraprompt.
+- ultraprompt gains a one-line `install.sh` and a 3-box README (upstream repo, tracked separately).
+
 ## 0.2.0 — 2026-07-20
 
 Model auto-routing + Fable-style reasoning injection.

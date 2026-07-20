@@ -11,6 +11,7 @@ If you are a Codex session and your first message follows the shape `## Goal / #
 5. **Ask early, not late.** If a criterion is ambiguous or contradicts the repo state, make your final message a single concrete question instead of guessing. The conductor answers questions without penalty; a wrong guess costs a rework round.
 6. **Rework messages are deltas.** A follow-up message listing unmet criteria and concrete defects means: fix exactly those, in the same working tree, on the same branch. Don't redo passing work.
 7. **If your first message opens with `## Read first`, read those files fully before writing any code.** They are strategy skills (reasoning discipline, not domain knowledge) selected for your unit; the conductor's observation checks that you read them, and skipping them earns a mid-turn steer. The paths are absolute and readable from your sandbox.
+8. **A unit can be taken over by the conductor.** If the session thrashes (three failed rework rounds) or your Codex quota runs out mid-run, the conductor may finish the unit itself — as Claude, in the same worktree, on the same `maestro/<unit-slug>` branch, verified against the same acceptance criteria. Takeover preserves your branch; it never discards your work. The way to avoid a surprise takeover is the contract you already follow: commit your work on the branch as you go, and report an ambiguity or a real blocker early and honestly (point 5) rather than grinding or guessing.
 
 ## What the conductor does with your output
 

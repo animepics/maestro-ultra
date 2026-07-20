@@ -120,7 +120,10 @@ What the QA runs also exercised, end to end:
 | Verification | `git diff` vs baseline + build/tests, per criterion | trust the printed output | manual |
 | Parallel work | worktree-isolated branches, capped, ordered merge | one-shot | tmux + memory |
 | Mid-turn correction | `steer` / `interrupt` | not possible | possible, manual |
+| Dispatch-quality gate | criteria rewritten to be testable / falsifiable / disjoint / failure-mode-aware; spec echoed back before dispatch | — | — |
 | Rework on failure | automatic, defect-named, ≤3 rounds, then escalation | re-run and re-explain | manual |
+| Autonomous terminal fallback | Clause A: after 3 failed rounds, one Claude attempt — but only with an independent oracle (else abort, branch preserved) | — | — |
+| Quota handover | Codex quota exhausted → Claude finishes the unit in the same worktree against the same criteria; flagged honestly when no independent oracle | — | — |
 | Crash recovery | `.maestro/state.json` resume | n/a | state in your head |
 | Model/effort per unit | auto-routed from the live roster (`models` RPC; gpt-5.6-family workhorse, light models for mechanical units) | flags, chosen by you | chosen by you |
 | Reasoning quality on smaller models | strategy skills injected per unit (`## Read first`) | — | — |
@@ -158,11 +161,15 @@ Phase 4  unit-b finishes first → verified while unit-a still runs; per-unit di
 Cleanup  merge in dispatch order → worktrees & branches removed, no leaks
 ```
 
+### Live status — `maestro-workflows`
+
+Ask **"maestro-workflows"** any time for one combined table of every performer currently running — Codex threads (phase, model, last event, elapsed) alongside the conductor's own background work — with an honest "no active performers" when nothing is live. The transport also ships a codex-side live view: `node scripts/codex-query.ts workflows --watch` auto-refreshes the same table (Codex threads only; Claude subagents are invisible to it).
+
 <br>
 
 ## Strategy skills — reasoning like the stronger model
 
-Merged from [ultraprompt](https://github.com/rlaope/ultraprompt): eight axis-sliced skills distilled from Fable 5 reasoning traces. They encode *strategy, not domain* — the same trade-off articulation pattern shows up in a kanban board and an LSM-tree, so it's captured once and transfers anywhere. Each is a standalone `SKILL.md` prompt with router-ready trigger lines, threshold heuristics, and anti-patterns; `install.sh` links them all.
+Authored here in maestro — the working copy where each skill and its evidence are written side by side — and published upstream to [ultraprompt](https://github.com/rlaope/ultraprompt) as the mirror: eight axis-sliced skills distilled from Fable 5 reasoning traces. They encode *strategy, not domain* — the same trade-off articulation pattern shows up in a kanban board and an LSM-tree, so it's captured once and transfers anywhere. Each is a standalone `SKILL.md` prompt with router-ready trigger lines, threshold heuristics, and anti-patterns; `install.sh` links them all.
 
 | Skill | What it encodes |
 |---|---|
@@ -176,6 +183,8 @@ Merged from [ultraprompt](https://github.com/rlaope/ultraprompt): eight axis-sli
 | [incremental-safety](skills/incremental-safety/SKILL.md) | Splitting a large change into states that are each safe to stop at |
 
 They compose with the conductor: maestro's criteria derivation is `failure-mode-enumeration` applied before dispatch, its evidence rules are `verification-discipline`, and a Codex session that reads them performs closer to how the conductor thinks.
+
+Four more axes are in draft — [state-probing](skills/state-probing/SKILL.md), [honest-reporting](skills/honest-reporting/SKILL.md), [delegation-parallelism](skills/delegation-parallelism/SKILL.md), and [context-memory-hygiene](skills/context-memory-hygiene/SKILL.md) — each a `v0.1 baseline draft` awaiting trace evidence from real Fable 5 runs, following the distillation protocol in [`skills/_SIMULATION.md`](skills/_SIMULATION.md): one representative task → a real session → a captured trace → a distilled axis. They stay marked as drafts, with no benchmark claims, until those traces land.
 
 ### Auto-routing + injection (v0.2)
 
@@ -207,7 +216,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). Short version: `cd scripts && npm run 
 - **Remote `HOST=` targets** — the transport already speaks to remote app-servers; verification needs a remote-diff story (`git bundle` or SSH-side execution)
 - **Per-task sandbox policy** — wrap the raw `config/value/write` RPC
 - **Minimal orchestration helper** — extract deterministic mechanics into code *only if* the verbatim prose templates prove insufficient in practice
-- **Rework-rate metrics** — criteria-pass-on-first-attempt tracking across runs
+- **Rework-rate metrics** *(shipped 0.3.0)* — an append-only `.maestro/metrics.jsonl` outcome ledger now records per-unit criteria-pass-on-first-attempt, model/effort, rework rounds, and who resolved it. Durable (never deleted), same-machine local only — no upload or aggregation service
 
 <br>
 
