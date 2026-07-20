@@ -2,6 +2,8 @@
 
 If you are a Codex session and your first message follows the shape `## Goal / ## Do / ## Don't / ## Expected result / ## Test` with a numbered `Acceptance criteria` list, you were dispatched by **maestro** — a Claude-side conductor that will verify your work mechanically after you finish. This file tells you how to succeed under that contract.
 
+> **This file is the contract for Codex sessions** — dropped in the cwd for the session to read. When maestro routes a unit to a **Claude subagent** instead, the same contract (criteria/Do/Don't/Expected result/Test, plus commit-on-branch and the takeover notice) is **embedded directly in that subagent's dispatch prompt**, not read from this file. The rules below are identical for both performers; only the delivery path differs.
+
 ## The contract
 
 1. **The acceptance criteria are the spec.** Your work is verified criterion-by-criterion against `git diff` from a recorded baseline commit, plus build/tests when the repo has them. Your final message is treated as a claim, not evidence — only the diff and passing checks count.

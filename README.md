@@ -2,14 +2,14 @@
 
 # maestro-ultra
 
-**Claude conducts. Codex performs. And every agent learns to reason like the stronger model.**
+**Claude conducts. Codex and Claude perform. And every agent learns to reason like the stronger model.**
 
 [![CI](https://github.com/animepics/maestro-ultra/actions/workflows/ci.yml/badge.svg)](https://github.com/animepics/maestro-ultra/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/animepics/maestro-ultra?color=2a78d6&label=release)](https://github.com/animepics/maestro-ultra/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-008300.svg)](CONTRIBUTING.md)
 [![Conductor: Claude Code](https://img.shields.io/badge/conductor-Claude%20Code-8A63D2)](https://claude.com/claude-code)
-[![Performer: Codex CLI](https://img.shields.io/badge/performer-Codex%20CLI-008300)](https://github.com/openai/codex)
+[![Performers: Codex CLI · Claude subagents](https://img.shields.io/badge/performers-Codex%20CLI%20%C2%B7%20Claude%20subagents-008300)](https://github.com/openai/codex)
 [![Strategy skills](https://img.shields.io/badge/strategy%20skills-8-2a78d6)](#strategy-skills--reasoning-like-the-stronger-model)
 
 <img src="docs/assets/maestro-ultra-hero.jpg" alt="maestro-ultra — the conductor at work" width="440">
@@ -19,12 +19,12 @@
 <p>One maestro on the podium — every task scored, dispatched, and proven.<br>
 Intent goes in, evidence-verified code comes out. Nothing merges on trust.</p>
 
-<sub>Built on Claude Code · conducts Codex today, any performer tomorrow</sub>
+<sub>Built on Claude Code · one prompt in, a performer matrix behind it — Codex sessions and Claude subagents, routed by model and effort</sub>
 
 </div>
 
 > [!IMPORTANT]
-> The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
+> The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **the performers are a matrix** — Codex sessions and Claude subagents, routed per unit by model and reasoning effort, with the conductor performing inline for trivial units. A performer's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests, applied identically no matter who performed.
 
 <br>
 
@@ -77,6 +77,9 @@ How Claude hooks the Codex app-server:
                                                           └──────────────────────────────┘
 ```
 
+> [!NOTE]
+> **Claude-subagent performers** take a second path not drawn above: a native Agent call — no transport, no app-server — working in the **same** conductor-created `maestro/<slug>` worktree, verified by the **same** `git diff` + build/tests. Only the dispatch channel differs; isolation and verification are identical (verification is performer-agnostic). A real Claude unit and a real Codex unit have passed the same criteria→diff→test pipeline, including a **parallel mixed pair** (one of each, separate worktrees, concurrent) with clean isolation and merge. Mid-turn steer timing and crash re-dispatch remain live-unconfirmed.
+
 Key mechanics, pinned as verbatim command templates in the skill (so they're identical on every run):
 
 - **Baseline first** — `git rev-parse HEAD` is recorded before any dispatch; review scope is exactly `diff <baseline>`.
@@ -116,6 +119,7 @@ What the QA runs also exercised, end to end:
 
 | | `/maestro` | raw `codex exec` | manual session juggling |
 |---|---|---|---|
+| Performer routing | each unit auto-routed across a matrix — Codex models AND Claude subagent tiers (haiku/sonnet/opus), conductor-direct for trivial units | single performer | you pick, manually |
 | Acceptance criteria per dispatch | enforced, embedded verbatim | your discipline | your discipline |
 | Verification | `git diff` vs baseline + build/tests, per criterion | trust the printed output | manual |
 | Parallel work | worktree-isolated branches, capped, ordered merge | one-shot | tmux + memory |

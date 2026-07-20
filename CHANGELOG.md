@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — 2026-07-20
+
+Performer-matrix routing: Codex sessions, Claude subagents, and conductor-direct as first-class cells.
+
+- **Performer matrix (Phase 1)**: each unit is now routed in **two stages** — pick the performer cell `{codex-session | claude-subagent | conductor-direct}`, then model/effort within it. Default stays **codex** (a separate token pool); claude/conductor-direct are chosen only on explicit signals (cost-pool, context-depth, latency, quota-state). **quota-state is a first-class routing input**, not only a fallback trigger. The 4-concurrent cap is scoped as a **codex-session isolation constraint** — claude concurrency is judged separately (soft bound ≤4). Per-unit user override sits on top of the conductor's choice; routing is never silent.
+- **Claude-subagent dispatch (Phase 2)**: a **native Agent call** — no new CLI or transport — carrying a per-call model (haiku/sonnet/opus), run in the background with a completion notification. The contract is **embedded in the dispatch prompt** (not `AGENTS.md`): the same Goal/Do/Don't/Expected/Test shape plus **commit-on-branch and a takeover notice**. Worktree isolation is **prompt-enforced** via an absolute-cwd instruction into the conductor-created `maestro/<slug>` worktree (the Agent tool's own `isolation:"worktree"` is deliberately not used). **Strategy-skill injection is tier-conditional**: skipped for opus/sonnet (frontier), considered for downshifted haiku.
+- **Conductor-budget fail-safe guard**: under conductor-budget pressure, don't route to claude; if Codex quota **and** the conductor budget are both pressured, **park/escalate** rather than burn the orchestrator's remaining budget.
+- **Ledger/state performer provenance**: state.json `performer` generalized to `codex|claude|conductor` — the **mutable current-actor** (still flips to `fable` on quota takeover); claude units record a subagent **handle** in place of a threadId. The ledger gains an immutable `performer` field and extends `resolvedBy` **normal** values to `codex|claude|conductor` (fallback values unchanged). **Headline first-attempt-pass is computed over `{codex, claude}` only** — the performers with an independent verifier; `conductor` lines (no dispatch boundary, self-graded) are provenance-only, excluded like the fallback set. Legacy lines without `performer` read as `codex`. **Claude-performer crash recovery** re-dispatches from the last worktree commit (not a server-turn rejoin).
+- **Live cross-performer verification**: a real Claude unit and a real Codex unit passed the **same** criteria→diff→test pipeline, including a **parallel mixed pair** (1 claude + 1 codex, separate worktrees, concurrent) with clean isolation and merge. Mid-turn steer-injection timing and crash re-dispatch remain `[live: unconfirmed]`.
+- External CLIs (Gemini, etc.) remain unsupported — roadmap only. The matrix is Codex sessions + Claude subagents.
+
 ## 0.3.0 — 2026-07-20
 
 Dispatch-quality gate, outcome ledger, and autonomous rework governance.
