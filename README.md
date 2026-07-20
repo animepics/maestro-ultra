@@ -16,8 +16,10 @@
 
 <h3><i>Intelligence, orchestrated.</i></h3>
 
-<p>Claude takes the podium. Codex becomes the orchestra.<br>
-Intent goes in — evidence-verified code comes out. Nothing merges on trust.</p>
+<p>One maestro on the podium — every task scored, dispatched, and proven.<br>
+Intent goes in, evidence-verified code comes out. Nothing merges on trust.</p>
+
+<sub>Built on Claude Code · conducts Codex today, any performer tomorrow</sub>
 
 </div>
 
