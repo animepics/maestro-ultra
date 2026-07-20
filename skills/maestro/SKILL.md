@@ -1,11 +1,11 @@
 ---
 name: maestro
-description: "Claude Maestro — Claude conducts Codex: analyzes a task, writes acceptance criteria, decides single vs N parallel Codex sessions, dispatches via codex app-server, observes progress, verifies results with diff review + build/tests, and drives a rework loop (≤3 rounds) before escalating. Triggers: 'maestro', 'conduct codex', 'dispatch to codex', 'codex로 처리'."
+description: "Claude Maestro — Claude conducts Codex: analyzes a task, writes acceptance criteria, decides single vs N parallel Codex sessions, auto-routes models, dispatches via codex app-server, observes progress, verifies results with diff review + build/tests, and drives a rework loop (≤3 rounds) before escalating. Use this WHENEVER the user wants implementation work done by Codex/GPT sessions — no explicit /maestro needed. Triggers include: 'maestro', any ask to delegate/hand off coding to codex ('have codex do this', 'let codex implement', 'send this to codex', 'ask codex to fix'), Korean phrasings ('codex로 처리', 'codex한테 시켜', '코덱스로 해줘', '코덱스에게 맡겨'), or requests to run/steer/verify Codex sessions."
 ---
 
 # maestro
 
-Claude is the conductor (planning, judgment, verification); Codex is the performer (implementation labor). One invocation — `/maestro "task description"` — runs the full loop: analyze → dispatch → observe → verify → rework/escalate.
+Claude is the conductor (planning, judgment, verification); Codex is the performer (implementation labor). This skill activates on any natural ask to hand work to Codex ("have codex do this", "codex한테 시켜") as well as explicit `/maestro "task description"` — either way it runs the full loop: analyze → dispatch → observe → verify → rework/escalate.
 
 **Judgment vs mechanics.** Steps marked *(judgment)* are yours to reason about. Steps marked *(mechanics)* are exact command templates: run them **verbatim** (filling `<placeholders>` only). Do not re-derive, reorder, or "improve" them — they encode correctness constraints (baseline attribution, worktree isolation, non-blocking dispatch) that prose reasoning gets intermittently wrong.
 

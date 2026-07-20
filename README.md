@@ -16,10 +16,9 @@
 
 </div>
 
-Two things live here, built to work together:
+maestro-ultra teaches Claude Code to **conduct** the Codex CLI. There's no command to memorize — once installed, just say *"have codex implement this"* (or *"codex한테 시켜"*) and the harness takes over: Claude analyzes the task, writes testable acceptance criteria, picks a model per work unit from your live roster, dispatches real Codex sessions over the app-server protocol, watches them run, and verifies the result against hard evidence before anything merges. (`/maestro "task"` also works if you like being explicit.)
 
-1. **`/maestro`** — an orchestration harness for people who run both Claude Code and the Codex CLI. One invocation has Claude analyze the task, write testable acceptance criteria, dispatch the implementation to real Codex sessions over the app-server protocol, watch them run, and verify the results against hard evidence before anything merges.
-2. **Eight strategy skills** (merged from [ultraprompt](https://github.com/rlaope/ultraprompt)) — portable reasoning prompts distilled from how a frontier model (Claude Fable 5) actually solves problems, written to make any sub-frontier agent — Opus, a Codex session, anything that reads a system prompt — explore, verify, and self-correct the way the stronger model does.
+Riding along: **eight strategy skills** (merged from [ultraprompt](https://github.com/rlaope/ultraprompt)) — portable reasoning prompts distilled from how a frontier model (Claude Fable 5) actually solves problems. maestro injects them into the sessions it dispatches so sub-frontier models explore, verify, and self-correct the way the stronger model does; they also stand alone in any agent that reads a system prompt.
 
 > [!IMPORTANT]
 > The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
@@ -37,10 +36,10 @@ curl -fsSL https://raw.githubusercontent.com/animepics/maestro-ultra/main/instal
 > hey, install this: https://github.com/animepics/maestro-ultra
 > ```
 
-Clones to `~/.maestro` (override with `MAESTRO_DIR`), installs the transport's npm dependencies, and symlinks the skill into `~/.claude/skills/`. From a local checkout, `./install.sh` does the same without cloning. Then, in Claude Code:
+Then just talk to Claude Code:
 
-```
-/maestro "implement a slugify utility with full test coverage"
+```text
+have codex implement a slugify utility with full test coverage
 ```
 
 See [Prerequisites](#prerequisites) for what must be running first — the skill's preflight checks it all and tells you exactly what's missing.
@@ -125,12 +124,6 @@ What the QA runs also exercised, end to end:
 
 > [!WARNING]
 > Not signed in to Codex (or no eligible ChatGPT plan)? Nothing will dispatch. The skill's preflight checks all of this before any dispatch and tells you exactly what's missing — including when you're not logged in.
-
-Then, in Claude Code:
-
-```
-/maestro "implement a slugify utility with full test coverage"
-```
 
 ## Example run (real transcript, condensed)
 
