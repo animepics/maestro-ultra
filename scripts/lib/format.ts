@@ -1,4 +1,13 @@
-import type { RemoteControlClient, Thread, ThreadStatus, Turn } from "./protocol.ts";
+import {
+  ErrorNotificationParamsSchema,
+  ItemNotificationParamsSchema,
+  type JsonRpcMessage,
+  type RemoteControlClient,
+  type Thread,
+  type ThreadStatus,
+  type Turn,
+  TurnCompletedParamsSchema,
+} from "./protocol.ts";
 import { assertNever } from "./result.ts";
 
 const TITLE_WIDTH = 70;
@@ -164,6 +173,66 @@ export function renderWorkflowTable(rows: readonly WorkflowRow[]): string {
 // Elsewhere (pipes, CI) degrade to a single one-shot render.
 export function shouldLiveWatch(watch: boolean, isTty: boolean): boolean {
   return watch && isTty;
+}
+
+// --- events subcommand (maestro-local) ------------------------------------
+// A turn-event tail. `events <threadId>` subscribes a SECOND connection to a
+// RUNNING turn's live notification broadcast (via thread/resume in commands.ts;
+// the app-server fans notifications out to every resumed connection, verified by
+// live probe) and prints one line per event. Classify/format here is pure and
+// testable; the socket loop lives in commands.ts. Unlike thread/read — whose
+// TurnSchema never carries willRetry — the live `error` notification exposes it,
+// so quota/retry signals are visible to the conductor mid-run.
+
+export type TailEvent = {
+  readonly body: string;
+  readonly terminal: boolean; // true only for turn/completed (the turn ended)
+};
+
+// Classifies one incoming frame for the events tail. Returns undefined for
+// frames of other threads and for non-event noise (token usage, hooks, deltas).
+export function classifyEventFrame(
+  targetThreadId: string,
+  message: JsonRpcMessage,
+): TailEvent | undefined {
+  switch (message.method) {
+    case "item/started":
+    case "item/completed": {
+      const parsed = ItemNotificationParamsSchema.safeParse(message.params);
+      if (!parsed.success || parsed.data.threadId !== targetThreadId) return undefined;
+      const phase = message.method === "item/started" ? "started" : "completed";
+      return { body: `item:${parsed.data.item.type} ${phase}`, terminal: false };
+    }
+    case "error": {
+      const parsed = ErrorNotificationParamsSchema.safeParse(message.params);
+      if (!parsed.success || parsed.data.threadId !== targetThreadId) return undefined;
+      return {
+        body: `turnError: ${parsed.data.error.message} willRetry=${parsed.data.willRetry}`,
+        terminal: false,
+      };
+    }
+    case "turn/completed": {
+      const parsed = TurnCompletedParamsSchema.safeParse(message.params);
+      if (!parsed.success || parsed.data.threadId !== targetThreadId) return undefined;
+      return { body: `completed: ${parsed.data.turn.status}`, terminal: true };
+    }
+    default:
+      return undefined;
+  }
+}
+
+export function formatClock(at: Date): string {
+  return at.toTimeString().slice(0, 8);
+}
+
+export function formatEventLine(event: TailEvent, at: Date): string {
+  return `[${formatClock(at)}] ${event.body}`;
+}
+
+// A one-shot `events` stops at the first turn/completed; --follow keeps tailing
+// across turns until SIGINT.
+export function shouldStopTail(event: TailEvent, follow: boolean): boolean {
+  return event.terminal && !follow;
 }
 
 export function formatClientLine(client: RemoteControlClient): string {

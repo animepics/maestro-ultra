@@ -153,6 +153,29 @@ describe("parseCliArgs workflows", () => {
   });
 });
 
+describe("parseCliArgs events", () => {
+  it("parses events with a thread id as a one-shot tail", () => {
+    // Given / When
+    const result = parseCliArgs(["events", "tid-8"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "events", threadId: "tid-8", follow: false });
+  });
+
+  it("parses --follow so the tail keeps listening across turns", () => {
+    // Given / When
+    const result = parseCliArgs(["events", "tid-9", "--follow"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "events", threadId: "tid-9", follow: true });
+  });
+
+  it("rejects events without a thread id", () => {
+    // Given / When / Then
+    assert.equal(parseCliArgs(["events"]).ok, false);
+  });
+});
+
 describe("parseCliArgs failure modes", () => {
   it("returns a usage error naming the command when the command is unknown", () => {
     // Given / When

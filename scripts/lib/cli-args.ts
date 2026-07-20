@@ -36,6 +36,7 @@ export type Command =
   | { readonly kind: "steer"; readonly threadId: string; readonly text: string }
   | { readonly kind: "interrupt"; readonly threadId: string }
   | { readonly kind: "workflows"; readonly watch: boolean; readonly cwd?: string }
+  | { readonly kind: "events"; readonly threadId: string; readonly follow: boolean }
   | { readonly kind: "help" };
 
 export type CliArgsError = { readonly kind: "usage"; readonly message: string };
@@ -51,7 +52,13 @@ const VALUE_FLAGS: ReadonlySet<string> = new Set([
   "model",
   "effort",
 ]);
-const BOOLEAN_FLAGS: ReadonlySet<string> = new Set(["archived", "approve", "full", "watch"]);
+const BOOLEAN_FLAGS: ReadonlySet<string> = new Set([
+  "archived",
+  "approve",
+  "full",
+  "watch",
+  "follow",
+]);
 
 const SORT_ALIASES: Readonly<Record<string, ThreadSortKey>> = {
   created: "created_at",
@@ -258,6 +265,11 @@ export function parseCliArgs(argv: readonly string[]): Result<Command, CliArgsEr
       const threadId = flags.positionals[1];
       if (threadId === undefined) return usage("usage: interrupt <threadId>");
       return ok({ kind: "interrupt", threadId });
+    }
+    case "events": {
+      const threadId = flags.positionals[1];
+      if (threadId === undefined) return usage("usage: events <threadId> [--follow]");
+      return ok({ kind: "events", threadId, follow: flags.booleans.has("follow") });
     }
     default:
       return usage(`unknown command '${command}'`);

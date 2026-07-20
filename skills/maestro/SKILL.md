@@ -192,7 +192,7 @@ node $SCRIPT msg <threadId> "<prompt>" --approve --timeout <fit-to-task-size>   
 
 ## Phase 3 — Observe *(mechanics + judgment)*
 
-While background `msg` runs: poll `node $SCRIPT active` and `node $SCRIPT read <threadId>`; summarize progress for the user. `steer <threadId> "<corrective delta>"` when a session drifts from its criteria *(judgment)*; `interrupt <threadId>` for runaway turns. On msg timeout the turn continues server-side: keep polling `read` — never re-`msg` blindly.
+While background `msg` runs: poll `node $SCRIPT active` and `node $SCRIPT read <threadId>`; summarize progress for the user. For a live event-by-event view, `node $SCRIPT events <threadId> --follow` (via `run_in_background`) tails the running turn from a second connection (`thread/resume` joins the broadcast — verified live): item starts/completions, status changes, `turnError` frames incl. `willRetry`, and exits at `turn/completed`. `steer <threadId> "<corrective delta>"` when a session drifts from its criteria *(judgment)*; `interrupt <threadId>` for runaway turns. On msg timeout the turn continues server-side: keep polling `read` — never re-`msg` blindly.
 
 *(Steer-during-background-msg is verified working: steer opens its own connection while the background msg holds one, injects into the running turn, and the delta is incorporated. If steer ever errors, fall back to interrupt + a rework msg.)*
 
@@ -283,7 +283,7 @@ Then **≤1 Fable attempt.** Oracle still fails → **terminal abort**: write th
 **Distinction vs Clause A** *(the one sentence that separates them)*: Clause A is a terminal loop-breaker fired after 3 failed rework rounds (strict gates, ≤1 attempt); a quota handover is a performer-swap with **NO failure history** — quota is external resource exhaustion, not a difficulty signal, so the clean-completion prior is high and the oracle requirement relaxes (used if present, degraded-and-gated if absent) — but the same honesty rules bind.
 
 Recognition, split by observation surface *(mechanics-flavored judgment)*:
-- **(i) LIVE dispatch-turn streaming** — a `turnError` event whose `error.message` is quota/rate-limit-shaped AND `willRetry=false` = quota exhaustion (`willRetry` exists only on the live `error` notification — `ErrorNotificationParamsSchema`).
+- **(i) LIVE dispatch-turn streaming** — a `turnError` event whose `error.message` is quota/rate-limit-shaped AND `willRetry=false` = quota exhaustion (`willRetry` exists only on the live `error` notification — `ErrorNotificationParamsSchema`). The dispatching `msg` process sees these; so does any second process tailing the turn via `events <threadId> --follow` (`thread/resume` broadcast — verified live), so live classification does not require being the dispatcher.
 - **(ii) resume / `read` path** — a thread `read` can NEVER carry `willRetry` (`TurnSchema` has no such field — schema fact). Recognize by `Status: failed` + a quota-shaped `error.message` ONLY, and **re-probe** (a minimal fresh `msg` or `status` check) confirming exhaustion is still current before declaring it — never assume from a stale message.
 - Exact quota message strings are unverified — [live: capture the real string on first occurrence and pin it here].
 

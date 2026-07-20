@@ -106,6 +106,17 @@ export const ErrorNotificationParamsSchema = z
   })
   .loose();
 
+// item/started and item/completed share this shape: the lifecycle of one turn
+// item (agentMessage, commandExecution, fileChange, …). Used by the `events`
+// tail to surface item progression.
+export const ItemNotificationParamsSchema = z
+  .object({
+    threadId: z.string(),
+    turnId: z.string().nullish(),
+    item: z.object({ type: z.string() }).loose(),
+  })
+  .loose();
+
 export const RemoteControlStatusSchema = z
   .object({
     status: z.string(),

@@ -2,14 +2,18 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import type { Command } from "./cli-args.ts";
-import type { CodexClient } from "./client.ts";
+import { type CodexClient, CodexRpcError } from "./client.ts";
 import {
   buildWorkflowRows,
+  classifyEventFrame,
   formatClientLine,
+  formatClock,
+  formatEventLine,
   formatThreadLine,
   type MaestroUnit,
   renderWorkflowTable,
   shouldLiveWatch,
+  shouldStopTail,
   statusLabel,
   turnAgentText,
   WORKFLOWS_HEADER,
@@ -46,6 +50,10 @@ export const USAGE = `usage: codex-query <command> [args] [flags]
                                         send a message, stream the reply
   steer <threadId> <text...>            inject input into the running turn
   interrupt <threadId>                  stop the running turn
+  events <threadId> [--follow]          tail a running turn's live events on a
+                                        second connection (item progress,
+                                        turnError willRetry, completion); one-shot
+                                        exits at turn end, --follow tails to SIGINT
 HOST targets any app-server: unset = this machine, a known alias (mengmotaHost,
 mengmotaMac), any ssh-reachable name[:port], or a ws:// URL. CODEX_WS_TOKEN overrides
 the token lookup.`;
@@ -264,6 +272,72 @@ async function runWorkflows(
   return watchWorkflows(client, cwd);
 }
 
+// thread/resume subscribes THIS connection to the thread's live notification
+// broadcast — the same mechanism msg/steer use. A second connection resuming a
+// turn started elsewhere still receives its notifications (verified by probe),
+// which is what makes an out-of-process event tail possible. A thread whose
+// first turn has not persisted a rollout yet cannot be resumed.
+async function resumeForEvents(client: CodexClient, threadId: string): Promise<boolean> {
+  try {
+    await client.request("thread/resume", { threadId });
+    return true;
+  } catch (error) {
+    if (
+      error instanceof CodexRpcError &&
+      (error.detail.includes("no rollout found") || error.detail.includes("is empty"))
+    )
+      return false;
+    throw error;
+  }
+}
+
+// The tail loop: print one line per classified event; a one-shot exits at the
+// first turn/completed, --follow tails across turns until SIGINT. Like
+// watchWorkflows this is long-lived, so main()'s finally still owns client.close
+// and the exit. Output is plain lines (no ANSI), so it is pipe-safe.
+function tailEvents(client: CodexClient, threadId: string, follow: boolean): Promise<number> {
+  return new Promise<number>((resolve) => {
+    let unsubscribe = (): void => {};
+    let stopped = false;
+    const finish = (code: number): void => {
+      if (stopped) return;
+      stopped = true;
+      unsubscribe();
+      resolve(code);
+    };
+    process.once("SIGINT", () => finish(0));
+    unsubscribe = client.onMessage((message) => {
+      const event = classifyEventFrame(threadId, message);
+      if (event === undefined) return;
+      console.log(formatEventLine(event, new Date()));
+      if (shouldStopTail(event, follow)) finish(0);
+    });
+  });
+}
+
+async function runEvents(
+  client: CodexClient,
+  command: Extract<Command, { kind: "events" }>,
+): Promise<number> {
+  const resumed = await resumeForEvents(client, command.threadId);
+  if (!resumed) {
+    console.error(`no rollout for ${command.threadId} yet — no live turn events to tail`);
+    return 1;
+  }
+  // Don't hang on a thread with nothing running: without a turn in progress and
+  // without --follow there is no live stream to wait for, so report and exit.
+  const thread = await readThread(client, command.threadId);
+  const running = thread.turns.some((turn) => turn.status === "inProgress");
+  if (!running && !command.follow) {
+    const last = thread.turns.at(-1);
+    console.log(
+      `[${formatClock(new Date())}] idle: no turn in progress (last: ${last?.status ?? "none"})`,
+    );
+    return 0;
+  }
+  return tailEvents(client, command.threadId, command.follow);
+}
+
 export async function runCommand(client: CodexClient, command: Command): Promise<number> {
   switch (command.kind) {
     case "help":
@@ -341,6 +415,8 @@ export async function runCommand(client: CodexClient, command: Command): Promise
       return runInterrupt(client, command);
     case "workflows":
       return runWorkflows(client, command);
+    case "events":
+      return runEvents(client, command);
     default:
       return assertNever(command);
   }

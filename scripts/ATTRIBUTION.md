@@ -24,3 +24,11 @@ here; maestro-local changes should stay minimal to keep the diff against upstrea
   fixed to "codex-side view only" since the transport cannot see Claude subagents.
   (`lib/cli-args.ts`, `lib/commands.ts`, `lib/format.ts`, tests in `lib/cli-args.test.ts`
   and `lib/format.test.ts`.)
+- `events <threadId> [--follow]` command: a live turn-event tail. A SECOND connection
+  `thread/resume`s the thread and receives its running turn's notification broadcast
+  (item lifecycle, `error` with willRetry — invisible to `thread/read` — and completion),
+  printing one line per event. One-shot exits at turn end; `--follow` tails across turns
+  until SIGINT. Reuses existing RPCs/schemas (no new deps); pure classify/format in
+  `format.ts`, socket loop in `commands.ts`, matching the `workflows` precedent.
+  (`lib/cli-args.ts`, `lib/commands.ts`, `lib/format.ts`, `lib/protocol.ts`, tests in
+  `lib/cli-args.test.ts` and `lib/format.test.ts`.)

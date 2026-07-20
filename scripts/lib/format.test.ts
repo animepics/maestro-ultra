@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildWorkflowRows,
+  classifyEventFrame,
   formatElapsed,
+  formatEventLine,
   formatThreadLine,
   renderWorkflowTable,
   shouldLiveWatch,
+  shouldStopTail,
   statusLabel,
   turnAgentText,
   WORKFLOW_COLUMNS,
@@ -177,5 +180,95 @@ describe("shouldLiveWatch", () => {
     assert.equal(shouldLiveWatch(true, false), false);
     assert.equal(shouldLiveWatch(false, true), false);
     assert.equal(shouldLiveWatch(false, false), false);
+  });
+});
+
+const EVENTS_THREAD = "t-target";
+
+describe("classifyEventFrame", () => {
+  it("renders item lifecycle with the item type and phase", () => {
+    // Given / When / Then: item/started carries the item type to tail
+    assert.deepEqual(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "item/started",
+        params: {
+          threadId: EVENTS_THREAD,
+          turnId: "u1",
+          item: { type: "commandExecution", id: "i1" },
+        },
+      }),
+      { body: "item:commandExecution started", terminal: false },
+    );
+    assert.deepEqual(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "item/completed",
+        params: { threadId: EVENTS_THREAD, turnId: "u1", item: { type: "agentMessage" } },
+      }),
+      { body: "item:agentMessage completed", terminal: false },
+    );
+  });
+
+  it("surfaces turnError with willRetry — the signal thread/read cannot show", () => {
+    // Given / When / Then
+    assert.deepEqual(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "error",
+        params: {
+          threadId: EVENTS_THREAD,
+          turnId: "u1",
+          willRetry: true,
+          error: { message: "UsageLimitExceeded" },
+        },
+      }),
+      { body: "turnError: UsageLimitExceeded willRetry=true", terminal: false },
+    );
+  });
+
+  it("marks turn/completed terminal so a one-shot tail stops", () => {
+    // Given / When / Then
+    assert.deepEqual(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "turn/completed",
+        params: { threadId: EVENTS_THREAD, turn: { id: "u1", status: "completed", items: [] } },
+      }),
+      { body: "completed: completed", terminal: true },
+    );
+  });
+
+  it("ignores frames for another thread and non-event noise", () => {
+    // Given: an item for a different thread, and a token-usage notification
+    assert.equal(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "item/started",
+        params: { threadId: "other", item: { type: "commandExecution" } },
+      }),
+      undefined,
+    );
+    assert.equal(
+      classifyEventFrame(EVENTS_THREAD, {
+        method: "thread/tokenUsage/updated",
+        params: { threadId: EVENTS_THREAD },
+      }),
+      undefined,
+    );
+  });
+});
+
+describe("formatEventLine and shouldStopTail", () => {
+  it("prefixes a wall-clock timestamp", () => {
+    // Given: a fixed local time
+    const at = new Date("2026-07-20T09:37:42");
+    // When / Then
+    assert.equal(
+      formatEventLine({ body: "completed: completed", terminal: true }, at),
+      "[09:37:42] completed: completed",
+    );
+  });
+
+  it("stops a one-shot tail on a terminal event but keeps --follow running", () => {
+    // Given / When / Then
+    assert.equal(shouldStopTail({ body: "completed: completed", terminal: true }, false), true);
+    assert.equal(shouldStopTail({ body: "completed: completed", terminal: true }, true), false);
+    assert.equal(shouldStopTail({ body: "item:x started", terminal: false }, false), false);
   });
 });
