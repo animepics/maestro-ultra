@@ -14,8 +14,9 @@
 
 <img src="docs/assets/maestro-ultra-hero.jpg" alt="maestro-ultra — the conductor at work" width="440">
 
-<p>Say <i>"have codex implement this"</i> — Claude dispatches Codex sessions and verifies the diff + tests.<br>
-Plus eight <a href="https://github.com/rlaope/ultraprompt">ultraprompt</a> skills that make smaller models reason like Fable 5.</p>
+<p>Claude hooks the Codex app-server and becomes the maestro: prompt Claude once,<br>
+and it plans, dispatches, and verifies real Codex sessions — merging only on diff + test evidence.<br>
+Eight <a href="https://github.com/rlaope/ultraprompt">ultraprompt</a> skills teach the dispatched models to reason like Fable 5.</p>
 
 </div>
 
