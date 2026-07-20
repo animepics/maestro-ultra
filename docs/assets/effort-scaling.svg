@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="330" viewBox="0 0 880 330" font-family="Helvetica, Arial, sans-serif">
   <rect width="880" height="330" fill="#ffffff"/>
-  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">Reasoning scales with requested effort</text>
-  <text x="32" y="62" font-size="12.5" fill="#52514e">Reasoning output tokens per session, by the --effort level maestro selected for each work unit</text>
+  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">It thinks harder only when the task deserves it</text>
+  <text x="32" y="62" font-size="12.5" fill="#52514e">Hidden "thinking" tokens per task — the budget maestro requested, matched to difficulty</text>
 
   <!-- legend (2 series) -->
   <g font-size="11.5" fill="#0b0b0b">
-    <rect x="620" y="30" width="12" height="12" rx="3" fill="#86b6ef"/>
-    <text x="638" y="40">--effort low</text>
-    <rect x="620" y="50" width="12" height="12" rx="3" fill="#1c5cab"/>
-    <text x="638" y="60">--effort medium</text>
+    <rect x="600" y="30" width="12" height="12" rx="3" fill="#86b6ef"/>
+    <text x="618" y="40">simple task · low effort</text>
+    <rect x="600" y="50" width="12" height="12" rx="3" fill="#1c5cab"/>
+    <text x="618" y="60">standard task · medium effort</text>
   </g>
 
   <!-- gridlines: 0 / 1000 / 2000 / 3000 ; baseline y=250, 3000 = 160px -->
@@ -57,9 +57,9 @@
 
   <!-- group separator note -->
   <g font-size="11" fill="#52514e" text-anchor="middle">
-    <text x="249" y="296">mechanical units → low</text>
-    <text x="594" y="296">standard implementation units → medium</text>
+    <text x="249" y="296">simple utilities → little thinking</text>
+    <text x="594" y="296">features with edge cases → 2–5× more thinking</text>
   </g>
 
-  <text x="32" y="318" font-size="11" fill="#52514e">Same model (gpt-5.6-luna) for all five sessions; only the per-unit effort override differs. Source: session rollout usage records, July 2026.</text>
+  <text x="32" y="318" font-size="11" fill="#52514e">Same model for all five tasks; only the per-task effort request differs. Source: Codex session usage, July 2026.</text>
 </svg>

@@ -39,13 +39,17 @@ Key mechanics, pinned as verbatim command templates in the skill (so they're ide
 - **Non-blocking dispatch** — `msg` runs in the background so Claude can observe, steer a drifting session mid-turn, or interrupt a runaway one.
 - **Crash-safe** — thread ids, baselines, and worktrees persist to `.maestro/state.json`; an interrupted run reattaches instead of orphaning sessions.
 
-## Measured behavior
+## What it costs & how it thinks (measured)
 
 Numbers below are from maestro's own QA runs — five real work units (implement + test utilities) dispatched to live Codex sessions in July 2026. No synthetic benchmarks.
 
-![Real token cost per work unit](docs/assets/token-cost.svg)
+![How much work goes into one task](docs/assets/token-cost.svg)
 
-![Reasoning scales with requested effort](docs/assets/effort-scaling.svg)
+> **Takeaway:** one finished task ≈ a 50–85-page read and a 4–10-page write for the model. The million-token totals you'd see in provider logs are ~90% cached re-reads of the same context, which are nearly free — the bars above are the real work.
+
+![It thinks harder only when the task deserves it](docs/assets/effort-scaling.svg)
+
+> **Takeaway:** maestro matches the thinking budget to the task — simple utilities get ~550 thinking tokens, features with edge cases get 2–5× more. Deep reasoning is spent only where it pays.
 
 What the QA runs also exercised, end to end:
 

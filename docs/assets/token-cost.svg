@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="392" viewBox="0 0 880 392" font-family="Helvetica, Arial, sans-serif">
   <rect width="880" height="392" fill="#ffffff"/>
-  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">Real token cost per work unit</text>
-  <text x="32" y="62" font-size="12.5" fill="#52514e">Uncached input and output tokens per Codex session — measured across five maestro QA work units (July 2026)</text>
+  <text x="32" y="40" font-size="17" font-weight="600" fill="#0b0b0b">How much work goes into one task</text>
+  <text x="32" y="62" font-size="12.5" fill="#52514e">Fresh text the model read vs. wrote per finished task — 10k tokens ≈ 15 pages (five real tasks, July 2026)</text>
 
   <!-- ============ Left panel: uncached input ============ -->
-  <text x="150" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">Uncached input tokens</text>
+  <text x="150" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">It read (new context) — ≈ 50–85 pages</text>
 
   <!-- gridlines: 0 / 20k / 40k / 60k over 220px (scale 60k=220) -->
   <g stroke="#e8e7e4" stroke-width="1">
@@ -46,7 +46,7 @@
   </g>
 
   <!-- ============ Right panel: output ============ -->
-  <text x="480" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">Output tokens</text>
+  <text x="480" y="102" font-size="12.5" font-weight="600" fill="#0b0b0b">It wrote (code + answers) — ≈ 4–10 pages</text>
 
   <!-- gridlines: 0 / 2k / 4k / 6k / 8k over 220px (scale 8k=220) -->
   <g stroke="#e8e7e4" stroke-width="1">
@@ -80,5 +80,5 @@
     <text x="604" y="304">4.3k</text>
   </g>
 
-  <text x="32" y="374" font-size="11" fill="#52514e">Totals shown to the provider are far higher (0.34M–0.82M) but 90–93% is cached input; bars show what a run actually costs. Source: ~/.codex/sessions rollout usage records.</text>
+  <text x="32" y="374" font-size="11" fill="#52514e">Provider logs show 0.34M–0.82M totals, but ~90% is cached re-reads of the same context — nearly free. Bars show only the new work.</text>
 </svg>
