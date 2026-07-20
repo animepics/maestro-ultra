@@ -1,8 +1,11 @@
-# maestro
+# maestro-ultra
 
-**Claude conducts. Codex performs.**
+**Claude conducts. Codex performs. And every agent learns to reason like the stronger model.**
 
-Maestro is an orchestration harness for people who run both Claude Code and the Codex CLI. One invocation — `/maestro "task"` — has Claude analyze the task, write testable acceptance criteria, dispatch the implementation work to real Codex sessions over the app-server protocol, watch them run, and verify the results against hard evidence before anything merges.
+Two things live here, built to work together:
+
+1. **`/maestro`** — an orchestration harness for people who run both Claude Code and the Codex CLI. One invocation has Claude analyze the task, write testable acceptance criteria, dispatch the implementation to real Codex sessions over the app-server protocol, watch them run, and verify the results against hard evidence before anything merges.
+2. **Eight strategy skills** (merged from [ultraprompt](https://github.com/rlaope/ultraprompt)) — portable reasoning prompts distilled from how a frontier model (Claude Fable 5) actually solves problems, written to make any sub-frontier agent — Opus, a Codex session, anything that reads a system prompt — explore, verify, and self-correct the way the stronger model does.
 
 The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
 
@@ -127,9 +130,26 @@ Phase 4  unit-b finishes first → verified while unit-a still runs; per-unit di
 Cleanup  merge in dispatch order → worktrees & branches removed, no leaks
 ```
 
+## Strategy skills — reasoning like the stronger model
+
+Merged from [ultraprompt](https://github.com/rlaope/ultraprompt): eight axis-sliced skills distilled from Fable 5 reasoning traces. They encode *strategy, not domain* — the same trade-off articulation pattern shows up in a kanban board and an LSM-tree, so it's captured once and transfers anywhere. Each is a standalone `SKILL.md` prompt with router-ready trigger lines, threshold heuristics, and anti-patterns; `install.sh` links them all.
+
+| Skill | What it encodes |
+|---|---|
+| [exploration-strategy](skills/exploration-strategy/SKILL.md) | The order in which to build a mental model before touching anything |
+| [hypothesis-management](skills/hypothesis-management/SKILL.md) | How many competing explanations to keep alive, and what evidence retires one |
+| [verification-discipline](skills/verification-discipline/SKILL.md) | What counts as proof of "done" — execution, not inspection |
+| [tradeoff-articulation](skills/tradeoff-articulation/SKILL.md) | Quantifying alternatives and stating the decision's cost out loud |
+| [failure-mode-enumeration](skills/failure-mode-enumeration/SKILL.md) | Listing edge cases before implementation, not after the bug report |
+| [self-correction-loop](skills/self-correction-loop/SKILL.md) | When to abandon an approach, and how to change course without thrashing |
+| [spec-to-code-fidelity](skills/spec-to-code-fidelity/SKILL.md) | Cross-checking habits when translating an RFC, paper, or formula into code |
+| [incremental-safety](skills/incremental-safety/SKILL.md) | Splitting a large change into states that are each safe to stop at |
+
+They compose with the conductor: maestro's criteria derivation is `failure-mode-enumeration` applied before dispatch, its evidence rules are `verification-discipline`, and a Codex session that reads them (via `AGENTS.md` or a pasted skill) performs closer to how the conductor thinks.
+
 ## For Codex sessions
 
-[`AGENTS.md`](AGENTS.md) documents the contract from the performer's side: criteria are the spec, diffs are the evidence, commit-on-branch for parallel units, ask one concrete question instead of guessing.
+[`AGENTS.md`](AGENTS.md) documents the contract from the performer's side: criteria are the spec, diffs are the evidence, commit-on-branch for parallel units, ask one concrete question instead of guessing. The [strategy skills](#strategy-skills--reasoning-like-the-stronger-model) above are written to be readable by Codex sessions too — `verification-discipline` and `failure-mode-enumeration` are the two that pay off first.
 
 ## Contributing
 

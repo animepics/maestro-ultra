@@ -5,7 +5,6 @@
 set -e
 
 REPO_URL="https://github.com/animepics/maestro-ultra.git"
-SKILL_LINK="$HOME/.claude/skills/maestro"
 
 # Local checkout if the script sits next to skills/maestro; otherwise clone/update.
 SELF_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)"
@@ -32,18 +31,22 @@ else
   exit 1
 fi
 
-echo "==> Linking skill to $SKILL_LINK"
+echo "==> Linking skills into ~/.claude/skills/"
 mkdir -p "$HOME/.claude/skills"
-if [ -e "$SKILL_LINK" ] || [ -L "$SKILL_LINK" ]; then
-  if [ "$(readlink "$SKILL_LINK" 2>/dev/null)" = "$REPO_DIR/skills/maestro" ]; then
-    echo "    already linked correctly, skipping"
+for SKILL_DIR in "$REPO_DIR"/skills/*/; do
+  NAME="$(basename "$SKILL_DIR")"
+  LINK="$HOME/.claude/skills/$NAME"
+  if [ -e "$LINK" ] || [ -L "$LINK" ]; then
+    if [ "$(readlink "$LINK" 2>/dev/null)" = "${SKILL_DIR%/}" ]; then
+      echo "    $NAME: already linked, skipping"
+    else
+      echo "    $NAME: SKIPPED — $LINK exists and points elsewhere (remove it to relink)"
+    fi
   else
-    echo "ERROR: $SKILL_LINK already exists and points elsewhere — remove it first" >&2
-    exit 1
+    ln -s "${SKILL_DIR%/}" "$LINK"
+    echo "    $NAME: linked"
   fi
-else
-  ln -s "$REPO_DIR/skills/maestro" "$SKILL_LINK"
-fi
+done
 
 echo "==> Done. Next steps:"
 echo "    1. Install the Codex CLI and sign in: codex login"
