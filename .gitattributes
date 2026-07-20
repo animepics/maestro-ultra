@@ -6,8 +6,8 @@
 *.json text eol=lf
 *.svg text eol=lf
 
-# Vendored transport: keep language stats and diffs honest
-scripts/** linguist-vendored
+# Transport started as vendored code (see scripts/ATTRIBUTION.md) but is now
+# substantially maestro-original (models/workflows/events + tests) — count it.
 scripts/package-lock.json -diff
 
 # Generated-ish assets collapse in PR diffs by default
