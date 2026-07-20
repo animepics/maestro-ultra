@@ -1,11 +1,24 @@
 ---
 name: maestro
-description: "Claude Maestro — Claude conducts Codex: analyzes a task, writes acceptance criteria, decides single vs N parallel Codex sessions, auto-routes models, dispatches via codex app-server, observes progress, verifies results with diff review + build/tests, and drives a rework loop (≤3 rounds) before escalating. Use this WHENEVER the user wants implementation work done by Codex/GPT sessions — no explicit /maestro needed. Triggers include: 'maestro', any ask to delegate/hand off coding to codex ('have codex do this', 'let codex implement', 'send this to codex', 'ask codex to fix'), Korean phrasings ('codex로 처리', 'codex한테 시켜', '코덱스로 해줘', '코덱스에게 맡겨'), or requests to run/steer/verify Codex sessions."
+description: "Claude Maestro — Claude conducts Codex: analyzes a task, writes acceptance criteria, decides single vs N parallel Codex sessions, auto-routes models, dispatches via codex app-server, observes progress, verifies results with diff review + build/tests, and drives a rework loop (≤3 rounds) before escalating. Use this WHENEVER the user wants implementation work done by Codex/GPT sessions — no explicit /maestro needed. Triggers include: 'maestro', any ask to delegate/hand off coding to codex ('have codex do this', 'let codex implement', 'send this to codex', 'ask codex to fix'), Korean phrasings ('codex로 처리', 'codex한테 시켜', '코덱스로 해줘', '코덱스에게 맡겨'), or requests to run/steer/verify Codex sessions. Even when the user does NOT mention codex: for a substantial implementation task (feature + tests, multi-file change, parallelizable work), OFFER maestro with a quick yes/no question before proceeding — see 'Offering maestro' in the skill body."
 ---
 
 # maestro
 
 Claude is the conductor (planning, judgment, verification); Codex is the performer (implementation labor). This skill activates on any natural ask to hand work to Codex ("have codex do this", "codex한테 시켜") as well as explicit `/maestro "task description"` — either way it runs the full loop: analyze → dispatch → observe → verify → rework/escalate.
+
+## Offering maestro (HITL — when the user didn't say "codex")
+
+If the user asks for substantial implementation work without mentioning Codex, don't silently take over and don't silently dispatch — **offer**. Use a structured yes/no question (AskUserQuestion where available; plain question otherwise):
+
+> This looks like a good fit for maestro — I'd conduct Codex sessions to implement it and verify the result against diff + tests. Hand it to Codex, or should I do it directly?
+> **[Codex via maestro (recommended)]** / **[Do it directly]**
+
+Rules *(judgment)*:
+- Offer ONLY for substantial work: a feature with tests, a multi-file change, or independently parallelizable units. Never for trivial edits, questions, reviews, or debugging-by-conversation — just do those.
+- Offer at most ONCE per task; a "no" holds for the rest of the session unless the user brings Codex up themselves.
+- Recommend the option you actually believe fits (per the Phase 1 right-size rule — if the cheap path is better, say so in the offer).
+- On "yes", proceed with the full loop below; on "no", work normally and never mention it again.
 
 **Judgment vs mechanics.** Steps marked *(judgment)* are yours to reason about. Steps marked *(mechanics)* are exact command templates: run them **verbatim** (filling `<placeholders>` only). Do not re-derive, reorder, or "improve" them — they encode correctness constraints (baseline attribution, worktree isolation, non-blocking dispatch) that prose reasoning gets intermittently wrong.
 

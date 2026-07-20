@@ -14,11 +14,10 @@
 
 <img src="docs/assets/maestro-ultra-hero.jpg" alt="maestro-ultra — the conductor at work" width="440">
 
+<p>Say <i>"have codex implement this"</i> — Claude dispatches Codex sessions and verifies the diff + tests.<br>
+Plus eight <a href="https://github.com/rlaope/ultraprompt">ultraprompt</a> skills that make smaller models reason like Fable 5.</p>
+
 </div>
-
-maestro-ultra teaches Claude Code to **conduct** the Codex CLI. There's no command to memorize — once installed, just say *"have codex implement this"* (or *"codex한테 시켜"*) and the harness takes over: Claude analyzes the task, writes testable acceptance criteria, picks a model per work unit from your live roster, dispatches real Codex sessions over the app-server protocol, watches them run, and verifies the result against hard evidence before anything merges. (`/maestro "task"` also works if you like being explicit.)
-
-Riding along: **eight strategy skills** (merged from [ultraprompt](https://github.com/rlaope/ultraprompt)) — portable reasoning prompts distilled from how a frontier model (Claude Fable 5) actually solves problems. maestro injects them into the sessions it dispatches so sub-frontier models explore, verify, and self-correct the way the stronger model does; they also stand alone in any agent that reads a system prompt.
 
 > [!IMPORTANT]
 > The philosophy is a strict division of labor: **Claude is the conductor** (planning, splitting, judgment, verification); **Codex is the performer** (implementation labor). A session's final answer is treated as a claim — the only evidence maestro accepts is `git diff` against a recorded baseline plus passing builds/tests.
