@@ -169,6 +169,10 @@ export function renderWorkflowTable(rows: readonly WorkflowRow[]): string {
   return [line(WORKFLOW_COLUMNS), ...cells.map(line)].join("\n");
 }
 
+export function renderWorkflowJson(rows: readonly WorkflowRow[]): string {
+  return JSON.stringify(rows);
+}
+
 // --watch drives an ANSI clear/redraw loop; that only makes sense on a TTY.
 // Elsewhere (pipes, CI) degrade to a single one-shot render.
 export function shouldLiveWatch(watch: boolean, isTty: boolean): boolean {

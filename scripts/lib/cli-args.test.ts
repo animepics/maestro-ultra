@@ -132,7 +132,7 @@ describe("parseCliArgs workflows", () => {
     const result = parseCliArgs(["workflows"]);
     // Then
     if (!result.ok) throw new Error(result.error.message);
-    assert.deepEqual(result.value, { kind: "workflows", watch: false });
+    assert.deepEqual(result.value, { kind: "workflows", watch: false, json: false });
   });
 
   it("parses --watch and --cwd so the live table can target another repo", () => {
@@ -140,7 +140,12 @@ describe("parseCliArgs workflows", () => {
     const result = parseCliArgs(["workflows", "--watch", "--cwd", "/repo/x"]);
     // Then
     if (!result.ok) throw new Error(result.error.message);
-    assert.deepEqual(result.value, { kind: "workflows", watch: true, cwd: "/repo/x" });
+    assert.deepEqual(result.value, {
+      kind: "workflows",
+      watch: true,
+      json: false,
+      cwd: "/repo/x",
+    });
   });
 
   it("leaves cwd undefined when only --watch is given", () => {
@@ -150,6 +155,23 @@ describe("parseCliArgs workflows", () => {
     if (!result.ok) throw new Error(result.error.message);
     if (result.value.kind !== "workflows") throw new Error("wrong kind");
     assert.equal(result.value.cwd, undefined);
+  });
+
+  it("parses --json for machine-readable one-shot output", () => {
+    // Given / When
+    const result = parseCliArgs(["workflows", "--json"]);
+    // Then
+    if (!result.ok) throw new Error(result.error.message);
+    assert.deepEqual(result.value, { kind: "workflows", watch: false, json: true });
+  });
+
+  it("rejects --json with --watch as incompatible output modes", () => {
+    // Given / When
+    const result = parseCliArgs(["workflows", "--json", "--watch"]);
+    // Then
+    assert.equal(result.ok, false);
+    if (result.ok) throw new Error("unreachable");
+    assert.match(result.error.message, /incompatible/);
   });
 });
 

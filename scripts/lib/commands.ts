@@ -11,6 +11,7 @@ import {
   formatEventLine,
   formatThreadLine,
   type MaestroUnit,
+  renderWorkflowJson,
   renderWorkflowTable,
   shouldLiveWatch,
   shouldStopTail,
@@ -38,8 +39,8 @@ export const USAGE = `usage: codex-query <command> [args] [flags]
   search <term...> [--limit n]          full-text thread search (experimental)
   active                                threads with a turn in flight
   models                                models offered by the app-server (raw JSON)
-  workflows [--watch] [--cwd path]      codex-side workflow table merged with
-                                        .maestro/state.json (one-shot; --watch refreshes)
+  workflows [--json | --watch] [--cwd path]
+                                        codex-side workflows merged with .maestro/state.json
   loaded                                thread ids loaded in server memory
   read <threadId> [--full]              thread details with recent turns
   answer <threadId>                     final agent message, full text
@@ -224,10 +225,14 @@ async function fetchActiveThreadsWithTurns(client: CodexClient): Promise<readonl
   return Promise.all(active.map((thread) => readThread(client, thread.id)));
 }
 
-async function renderWorkflowsOnce(client: CodexClient, cwd: string): Promise<void> {
+async function renderWorkflowsOnce(client: CodexClient, cwd: string, json: boolean): Promise<void> {
   const threads = await fetchActiveThreadsWithTurns(client);
   const units = readMaestroState(cwd);
   const rows = buildWorkflowRows(threads, units, Date.now());
+  if (json) {
+    console.log(renderWorkflowJson(rows));
+    return;
+  }
   console.log(WORKFLOWS_HEADER);
   if (threads.length === 0) console.log("no active codex sessions");
   if (rows.length > 0) console.log(renderWorkflowTable(rows));
@@ -249,7 +254,7 @@ function watchWorkflows(client: CodexClient, cwd: string): Promise<number> {
     const loop = async (): Promise<void> => {
       while (!stopped) {
         process.stdout.write("\x1b[2J\x1b[3J\x1b[H"); // clear screen + scrollback
-        await renderWorkflowsOnce(client, cwd);
+        await renderWorkflowsOnce(client, cwd, false);
         await new Promise((tick) => setTimeout(tick, WORKFLOWS_REFRESH_MS));
       }
     };
@@ -266,7 +271,7 @@ async function runWorkflows(
 ): Promise<number> {
   const cwd = command.cwd ?? process.cwd();
   if (!shouldLiveWatch(command.watch, process.stdout.isTTY === true)) {
-    await renderWorkflowsOnce(client, cwd);
+    await renderWorkflowsOnce(client, cwd, command.json);
     return 0;
   }
   return watchWorkflows(client, cwd);
